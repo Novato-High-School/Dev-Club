@@ -1,0 +1,48 @@
+---
+/**
+ * NOT FOUND PAGE
+ * ==============
+ * Shown when somebody follows a link to a page that does not exist. GitHub
+ * Pages picks this file up automatically because of its name.
+ */
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import HexGrid from '../components/HexGrid.astro';
+import { href } from '../lib/href';
+---
+
+<BaseLayout title="404" description="That page does not exist.">
+  <section class="relative overflow-hidden">
+    <HexGrid class="opacity-50" />
+
+    <div class="relative mx-auto max-w-2xl px-5 py-24 text-center">
+      <p class="font-mono text-sm text-muted">
+        <span class="text-gold" aria-hidden="true">$</span> cd ./that-page
+      </p>
+
+      <h1 class="mt-6 font-mono text-3xl font-bold sm:text-4xl">
+        <span class="text-gold">404:</span> no such file or directory
+      </h1>
+
+      <p class="mt-5 leading-relaxed text-muted">
+        The page you were looking for is not here. It may have been renamed, or
+        the link that sent you here may have a typo in it.
+      </p>
+
+      <div class="mt-9 flex flex-wrap justify-center gap-3">
+        <a
+          href={href('/')}
+          class="rounded border border-gold bg-gold px-5 py-2.5 font-mono text-sm font-medium text-ink transition-colors hover:bg-transparent hover:text-gold"
+        >
+          cd ~
+        </a>
+        <a
+          href={href('/build')}
+          class="rounded border border-edge px-5 py-2.5 font-mono text-sm text-bone transition-colors hover:border-gold hover:text-gold"
+        >
+          See the projects
+        </a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

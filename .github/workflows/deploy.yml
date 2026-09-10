@@ -1,0 +1,53 @@
+# AUTOMATIC DEPLOYMENT
+# ====================
+# Every time something is pushed or merged into the `main` branch, GitHub runs
+# this file on one of its own computers: it installs the project, builds the
+# site, and publishes the result to GitHub Pages. Nobody has to upload files.
+#
+# ONE-TIME SETUP (a repository admin has to do this once):
+#   Repository Settings -> Pages -> Build and deployment -> Source: GitHub Actions
+# Without that setting, the deploy step below fails.
+#
+# You can also run this by hand from the repository's "Actions" tab, thanks to
+# the workflow_dispatch line.
+
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Permissions this job needs: read the code, and publish to Pages.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# If two pushes happen close together, let the newer one win rather than
+# queueing up two deploys that fight over the same site.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  # Step one: turn the source files into a folder of finished HTML.
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v7
+      - name: Install dependencies, build the site, and hand it to Pages
+        uses: withastro/action@v6
+
+  # Step two: publish that folder to the public web address.
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5

@@ -1,0 +1,73 @@
+---
+/**
+ * BUILD PAGE
+ * ==========
+ * Every club project, newest first, with the featured ones pinned to the top.
+ * Nothing on this page is typed in by hand — it all comes from the Markdown
+ * files in src/content/projects/. Add a file there and it appears here.
+ */
+
+import { getCollection } from 'astro:content';
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import HexGrid from '../components/HexGrid.astro';
+import Prompt from '../components/Prompt.astro';
+import RepoCard from '../components/RepoCard.astro';
+import { CLUB } from '../config/site';
+
+// Sort: featured projects first, then most recently started.
+const projects = (await getCollection('projects')).sort((a, b) => {
+  if (a.data.featured !== b.data.featured) return a.data.featured ? -1 : 1;
+  return b.data.started.getTime() - a.data.started.getTime();
+});
+
+// A quick tally by status, shown as a summary line at the top of the page.
+const counts = {
+  building: projects.filter((p) => p.data.status === 'building').length,
+  shipped: projects.filter((p) => p.data.status === 'shipped').length,
+  idea: projects.filter((p) => p.data.status === 'idea').length,
+};
+---
+
+<BaseLayout
+  title="Build"
+  description="Projects the Dev Club is building, from first ideas to shipped software."
+>
+  <section class="relative overflow-hidden border-b border-edge">
+    <HexGrid class="opacity-50" />
+    <div class="relative mx-auto max-w-6xl px-5 py-16">
+      <Prompt command="ls ./projects" />
+      <h1 class="mt-4 font-mono text-4xl font-bold tracking-tight">Build</h1>
+      <p class="mt-5 max-w-xl leading-relaxed text-muted">
+        Everything here was started by a student. Some of it works, some of it
+        is half finished, and some of it is still only an idea waiting for
+        somebody to claim it.
+      </p>
+
+      <p class="mt-6 font-mono text-sm text-muted">
+        <span class="text-gold">{counts.building}</span> in progress
+        <span class="mx-2 text-edge">|</span>
+        <span class="text-acid">{counts.shipped}</span> shipped
+        <span class="mx-2 text-edge">|</span>
+        <span class="text-cyan">{counts.idea}</span> open ideas
+      </p>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-6xl px-5 py-14">
+    <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      {projects.map((project) => <RepoCard {...project.data} />)}
+    </div>
+
+    {/* A quiet nudge that adding a project is genuinely a small task. */}
+    <div class="mt-12 rounded-lg border border-dashed border-edge p-6 text-center">
+      <p class="font-mono text-sm text-muted">
+        Working on something? Add it here by writing one Markdown file &mdash;
+        see&#32;<a
+          href={`${CLUB.githubOrg}/Dev-Club/blob/main/CONTRIBUTING.md`}
+          class="text-cyan transition-colors hover:text-gold">CONTRIBUTING.md</a
+        >.
+      </p>
+    </div>
+  </section>
+</BaseLayout>
