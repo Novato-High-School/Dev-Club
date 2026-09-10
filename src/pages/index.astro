@@ -1,0 +1,234 @@
+---
+/**
+ * HOME PAGE
+ * =========
+ * Who we are, when we meet, and how to join. The "next meeting" box is not
+ * typed in here — it comes from the newest file in src/content/updates/ whose
+ * kind is 'meeting', so keeping it current means editing one Markdown file.
+ */
+
+import { getCollection, render } from 'astro:content';
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import BootTerminal from '../components/BootTerminal.astro';
+import HexGrid from '../components/HexGrid.astro';
+import Prompt from '../components/Prompt.astro';
+import RepoCard from '../components/RepoCard.astro';
+import { href } from '../lib/href';
+import { CLUB, BOOT_MODE, SITE_DESCRIPTION } from '../config/site';
+
+// Find the next meeting: the soonest meeting that has not happened yet.
+const updates = await getCollection('updates');
+const meetings = updates
+  .filter((entry) => entry.data.kind === 'meeting')
+  .sort((a, b) => a.data.date.getTime() - b.data.date.getTime());
+// A meeting counts as "upcoming" until the end of the day it happens on, so
+// the box does not vanish on the morning of the meeting itself. (Dates from
+// Markdown are midnight UTC, so we add a day's worth of milliseconds.)
+const ONE_DAY = 24 * 60 * 60 * 1000;
+const now = Date.now();
+const nextMeeting =
+  meetings.find((entry) => entry.data.date.getTime() + ONE_DAY >= now) ??
+  meetings.at(-1);
+
+// Show the two or three projects marked as featured on the home page.
+const featured = (await getCollection('projects'))
+  .filter((entry) => entry.data.featured)
+  .slice(0, 3);
+
+// The three most recent announcements and meeting recaps. Their Markdown
+// bodies are turned into HTML here so the markup below stays readable.
+const recent = await Promise.all(
+  updates
+    .filter((entry) => entry.data.kind !== 'meeting')
+    .sort((a, b) => b.data.date.getTime() - a.data.date.getTime())
+    .slice(0, 3)
+    .map(async (entry) => ({
+      data: entry.data,
+      Content: (await render(entry)).Content,
+    })),
+);
+
+// Formats a date the way a person would say it, e.g. "Thursday, September 17".
+//
+// timeZone: 'UTC' is not optional here. A date written as 2026-09-17 in a
+// Markdown file is read as midnight UTC, which is still the 16th in
+// California — so without this the site shows every date one day early.
+const dateFormat = new Intl.DateTimeFormat('en-US', {
+  weekday: 'long',
+  month: 'long',
+  day: 'numeric',
+  timeZone: 'UTC',
+});
+---
+
+<BaseLayout title="Dev Club" description={SITE_DESCRIPTION}>
+  {/* ------------------------------------------------------------------
+      HERO — the club's name and one-line pitch.
+  ------------------------------------------------------------------ */}
+  <section class="relative overflow-hidden border-b border-edge">
+    <HexGrid class="opacity-70" />
+
+    <div class="relative mx-auto max-w-6xl px-5 py-20 sm:py-28">
+      <Prompt command="whoami" />
+
+      {/* The &#32; entities are written-out spaces. Ordinary spaces between
+          tags get collapsed away when the page is built, which would run the
+          words together as "while{Dev Club}". */}
+      <h1 class="mt-4 font-mono text-3xl font-bold tracking-tight sm:text-6xl">
+        <span class="text-gold">while</span>&#32;<span class="text-muted"
+          >&#123;</span
+        >&#32;Dev Club&#32;<span class="text-muted">&#125;</span>
+      </h1>
+
+      <p class="mt-6 max-w-xl text-lg leading-relaxed text-muted">
+        The student developer club at Novato High School. We build real things,
+        publish them in the open, and teach each other as we go.&#32;<span
+          class="text-bone">You do not need to know how to code to walk in.</span
+        >
+      </p>
+
+      <div class="mt-9 flex flex-wrap gap-3">
+        <a
+          href={href('/join')}
+          class="rounded border border-gold bg-gold px-5 py-2.5 font-mono text-sm font-medium text-ink transition-colors hover:bg-transparent hover:text-gold"
+        >
+          Request access
+        </a>
+        <a
+          href={href('/build')}
+          class="rounded border border-edge px-5 py-2.5 font-mono text-sm text-bone transition-colors hover:border-gold hover:text-gold"
+        >
+          See what we build
+        </a>
+      </div>
+    </div>
+  </section>
+
+  {/* In 'hero' mode the terminal lives here, in the page, instead of covering
+      the screen. In the other modes this renders nothing at all. */}
+  {
+    BOOT_MODE === 'hero' && (
+      <section class="mx-auto max-w-6xl px-5 py-14">
+        <Prompt command="./boot.sh" class="mb-4" />
+        <div id="boot-inline-mount" class="h-[26rem]" />
+        <BootTerminal variant="inline" />
+      </section>
+    )
+  }
+
+  {/* ------------------------------------------------------------------
+      NEXT MEETING — read from src/content/updates/.
+  ------------------------------------------------------------------ */}
+  {
+    nextMeeting && (
+      <section class="mx-auto max-w-6xl px-5 py-16">
+        <div class="rounded-lg border border-edge bg-surface p-6 sm:p-8">
+          <Prompt command="dev-club --next-meeting" />
+
+          <h2 class="mt-4 font-mono text-2xl font-semibold">
+            {nextMeeting.data.title}
+          </h2>
+
+          <dl class="mt-5 grid gap-4 font-mono text-sm sm:grid-cols-3">
+            <div>
+              <dt class="text-muted">when</dt>
+              <dd class="mt-1 text-gold">
+                {dateFormat.format(nextMeeting.data.date)}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-muted">time</dt>
+              <dd class="mt-1 text-gold">
+                {CLUB.meetingDay}, {CLUB.meetingTime}
+              </dd>
+            </div>
+            <div>
+              <dt class="text-muted">where</dt>
+              <dd class="mt-1 text-gold">
+                {nextMeeting.data.where ?? CLUB.meetingRoom}
+              </dd>
+            </div>
+          </dl>
+        </div>
+      </section>
+    )
+  }
+
+  {/* ------------------------------------------------------------------
+      FEATURED PROJECTS — projects with `featured: true` in their file.
+  ------------------------------------------------------------------ */}
+  {
+    featured.length > 0 && (
+      <section class="mx-auto max-w-6xl px-5 pb-16">
+        <div class="flex items-end justify-between gap-4">
+          <div>
+            <Prompt command="ls ./projects --featured" />
+            <h2 class="mt-3 font-mono text-2xl font-semibold">
+              What we're building
+            </h2>
+          </div>
+          <a
+            href={href('/build')}
+            class="shrink-0 font-mono text-sm text-cyan transition-colors hover:text-gold"
+          >
+            all projects &rarr;
+          </a>
+        </div>
+
+        <div class="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {featured.map((project) => (
+            <RepoCard {...project.data} />
+          ))}
+        </div>
+      </section>
+    )
+  }
+
+  {/* ------------------------------------------------------------------
+      LATEST — announcements and meeting recaps, newest first.
+  ------------------------------------------------------------------ */}
+  {
+    recent.length > 0 && (
+      <section class="mx-auto max-w-6xl px-5 pb-20">
+        <Prompt command="tail -n 3 ./updates" />
+        <h2 class="mt-3 font-mono text-2xl font-semibold">Latest</h2>
+
+        <div class="mt-8 space-y-4">
+          {recent.map(({ data, Content }) => (
+            <article class="rounded-lg border border-edge bg-surface p-6">
+              <div class="flex flex-wrap items-baseline gap-3">
+                <span
+                  class:list={[
+                    'rounded border px-2 py-0.5 font-mono text-xs',
+                    data.kind === 'recap'
+                      ? 'border-cyan/40 text-cyan'
+                      : 'border-gold/40 text-gold',
+                  ]}
+                >
+                  {data.kind}
+                </span>
+                <h3 class="font-mono text-lg font-semibold">{data.title}</h3>
+                <time
+                  datetime={data.date.toISOString().slice(0, 10)}
+                  class="ml-auto font-mono text-xs text-muted"
+                >
+                  {dateFormat.format(data.date)}
+                </time>
+              </div>
+
+              {/*
+                The Markdown body. Links written the simple way in those files,
+                like [Build](/build), are corrected automatically — see
+                src/lib/satteri-base-links.mjs.
+              */}
+              <div class="md-content mt-3 space-y-3 text-sm leading-relaxed text-muted">
+                <Content />
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+    )
+  }
+</BaseLayout>
