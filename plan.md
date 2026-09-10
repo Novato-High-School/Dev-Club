@@ -1,99 +1,113 @@
-Recommended stack
-Tool	Purpose
-Astro	Main site framework; fast, approachable, and excellent for mostly static sites
-Tailwind CSS	Rapidly build a custom visual system without maintaining huge CSS files
-Motion	Smooth entrance, hover, scroll, and page-transition animations
-Shiki	Real syntax highlighting for code-inspired page elements
-Lucide	Clean, consistent open-source icons
-GitHub Actions	Automatically rebuild and publish after changes are merged
-Markdown/MDX	Let members add projects, news, and meeting recaps without editing layouts
+# Dev Club site — what's next
 
-Astro has an official GitHub Pages deployment workflow, and Tailwind has direct Astro integration. That makes this stack modern without being unusually difficult to maintain. Astro GitHub Pages guide · Tailwind with Astro
+The site is built and deployed. This file tracks what is left to do.
 
-Visual direction
+For how to add content, see [CONTRIBUTING.md](CONTRIBUTING.md).
+For how the site is put together, see [README.md](README.md).
 
-I’d use while { Dev Club } as the logo-like display name, with Dev Club used in normal writing.
+---
 
-A small interactive “access challenge” could give the site personality immediately. I would make it feel like gaining access to a developer space, but keep it easy enough that a student with no coding experience won’t feel excluded.
+## Decided and done
 
-Best concept: Boot the club
+Recorded here so nobody re-litigates it:
 
-The visitor arrives at a terminal-like screen:
+| Decision | Where it lives |
+| --- | --- |
+| Astro 7 + Tailwind 4, static, no server | `astro.config.mjs` |
+| Deployed to GitHub Pages on merge to `main` | `.github/workflows/deploy.yml` |
+| Content in Markdown, schema-checked at build | `src/content.config.ts` |
+| Near-black + hornet gold, Space Grotesk + JetBrains Mono | `src/styles/global.css` |
+| Boot terminal, switchable in one line | `src/config/site.ts` |
+| Site collects no visitor data, credits people by GitHub username | by design |
 
-DEV CLUB SYSTEM
-Status: waiting for input
+Two corrections to the original brief, worth not repeating: `@astrojs/tailwind`
+is legacy (Tailwind 4 uses `@tailwindcss/vite`), and Astro 7 replaced
+remark/rehype with its own Markdown processor, Sätteri.
 
-Type help to begin.
->
+---
 
-Typing help returns:
+## 1. Launch checklist
 
-Available commands:
+Nothing here needs code. All of it is blocking a real launch.
 
-about     What is Dev Club?
-projects  See what we're building
-learn     Explore tools and workshops
-join      Request access
+- [ ] Merge `site/initial-build` — https://github.com/Novato-High-School/Dev-Club/pull/new/site/initial-build
+- [ ] Repo Settings → Pages → Source → **GitHub Actions** (do this *before* merging, or the first deploy fails)
+- [ ] Meeting room and time — `CLUB` in `src/config/site.ts`, and the `where:` line in `src/content/updates/next-meeting.md`, which overrides it on the home page
+- [ ] Advisor's **school** email (`@nusd.org`, never a personal address) — `CLUB.advisorEmail`
+- [ ] Interest form URL — `CLUB.interestFormUrl`. Keep the form in the school's Google Workspace so submissions land somewhere already approved for student data.
+- [ ] Delete `src/content/speakers/example-guest.md` once a real guest has visited
 
-Typing join starts a tiny interaction:
+---
 
-Complete the program:
+## 2. Loose ends in the code
 
-while (curious) {
-    ______();
-}
+Small, known gaps left from the first build. Each is a good first task for a
+member who wants to touch real code rather than Markdown.
 
-Accepted answers could include:
+**Link preview image.** `BaseLayout.astro` declares
+`twitter:card: summary_large_image` but there is no `og:image`, so pasting a
+link into Discord or a text message shows nothing. Needs a 1200×630 image in
+`public/` and two `<meta>` tags. Could be generated at build time from the page
+title so every page gets its own.
 
-learn
-build
-create
-experiment
+**Decide about `motion`.** The `motion` package is in `package.json` but is not
+imported anywhere — the animation in the site is all CSS. Either use it for the
+entrance and scroll effects in the original brief, or remove the dependency.
+Leaving an unused package installed is the worst of the three options.
 
-Then:
+**Sitemap and robots.txt.** Neither exists. `@astrojs/sitemap` is one line of
+config and helps the site actually turn up when somebody searches for the club.
 
-✓ ACCESS GRANTED
+**Real Lighthouse run.** The site was checked for keyboard access, reduced
+motion, no-JS, and 375px width, but never scored. Run it on Home and Build and
+fix what it finds.
 
-Welcome to Dev Club.
-[ Enter the site ]
+---
 
-Then have the site “execute” into its main content.
+## 3. Fill it with real content
 
-The design could include:
+The site is a shell until this happens, and this is the part members can do
+without any code.
 
-Near-black background with off-white text
-Electric yellow or hornet gold as the primary accent
-Acid green, cyan, or purple as a secondary accent
-Large monospace headings mixed with a clean sans-serif font
-Code-editor panels and terminal-style labels
-Animated cursor, grid, glow, or moving background noise
-Project cards that resemble GitHub repositories
-Meeting information presented like a command prompt
-Subtle hornet references through color, hexagonal grids, or motion—not mascot clip art
+- [ ] Replace the three seeded projects with what the club is actually building
+- [ ] Write a recap after each meeting (`src/content/updates/`, `kind: recap`)
+- [ ] Add tracks beyond the four seeded ones as workshops actually run
+- [ ] Add guest speakers once visits happen — with their permission, linking to
+      a public professional page, never a personal contact detail
 
-Good fonts include Space Grotesk, IBM Plex Mono, JetBrains Mono, and Geist.
+---
 
-Tools for the extra-rad parts
-Figma or Penpot: Sketch the visual system before coding.
-Motion: Add polished animations without bringing in an enormous animation system. Motion documentation
-Rive: Create an interactive logo or animated hornet/robot mascot.
-Spline: Add a lightweight interactive 3D centerpiece, perhaps a rotating wireframe hornet or { } symbol.
-SVG filters: Create glitch, grain, glow, and distortion effects while keeping graphics crisp.
-CSS gradients and masks: Build animated grids, spotlights, and glowing borders without image files.
-Shiki: Display legitimate Python, JavaScript, Swift, and command-line syntax.
-GitHub API: Automatically show public club repositories and recent activity. Because GitHub Pages only hosts static HTML, CSS, and JavaScript, anything needing secure credentials or server processing should run through GitHub Actions or an external service such as Azure. GitHub Pages overview
-Site structure
+## 4. Ideas from the original brief, not yet built
 
-I’d keep the first version focused:
+Kept because they are still good, ordered roughly by value per effort.
 
-Home — identity, pitch, next meeting, and join button
-Build — current and completed club projects
-Learn — GitHub, Python, Azure, Apple development, and other learning tracks
-Connect — guest speakers and technology careers
-Join — meeting information, expectations, and interest form
+**Live GitHub repo feed.** Pull the org's public repositories at build time and
+show real commit activity on the Build page. Runs in GitHub Actions, so it needs
+no secrets in the browser. This is the highest-value item on the list — it makes
+the site feel alive without anybody writing a post.
 
-My strongest recommendation is:
+**Motion polish.** Entrance, hover, and scroll animation. Must respect
+`prefers-reduced-motion`, which the CSS already honours — keep it that way.
 
-Astro + Tailwind + Motion + Markdown, deployed through GitHub Actions.
+**Glitch, grain, and glow.** SVG filters and CSS gradients for texture, no image
+files. Cheap to try, easy to overdo; keep text readable.
 
-It gives the site substantial visual freedom while keeping it understandable enough that students can meaningfully contribute to the actual club website.
+**An interactive centrepiece.** Rive for an animated hornet or logo, or Spline
+for a rotating wireframe `{ }`. Genuinely fun, and genuinely the most work here —
+watch the page weight, and give it a static fallback.
+
+**Custom domain.** Two steps: set `BASE = '/'` and `SITE_URL` in
+`src/config/site.ts`, and add `public/CNAME` plus DNS records. Every link on the
+site already goes through the `href()` helper, so nothing else needs editing.
+This was designed for from the start.
+
+---
+
+## 5. Ongoing
+
+- Keep `CONTRIBUTING.md` true. If a step changes, fix it the same day —
+  instructions that lie are worse than none.
+- When code changes, fix the comment above it in the same pull request.
+- **The privacy rule does not relax.** No student names, emails, phone numbers,
+  photos, or schedules on this site, ever. The content schemas have no field for
+  them on purpose. If something feels borderline, ask before merging.
