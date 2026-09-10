@@ -1,0 +1,49 @@
+---
+/**
+ * CODE PANEL
+ * ==========
+ * Wraps a block of code in something that looks like a code editor window,
+ * with a title bar and a filename. Give it code and a language and it does the
+ * syntax colouring for you using Shiki, the same highlighter VS Code uses.
+ *
+ *     <CodePanel code={someCode} lang="python" filename="bot.py" />
+ */
+
+import { Code } from 'astro:components';
+
+interface Props {
+  /** The code to display, as a plain string. */
+  code: string;
+  /** Language name, e.g. 'python', 'bash', 'swift', 'js'. */
+  lang?: string;
+  /** Filename shown in the title bar. */
+  filename?: string;
+  /** Extra Tailwind classes. */
+  class?: string;
+}
+
+const { code, lang = 'python', filename, class: className = '' } = Astro.props;
+---
+
+<div
+  class:list={[
+    'overflow-hidden rounded-lg border border-edge bg-surface',
+    className,
+  ]}
+>
+  <!-- The fake window title bar, including the three little dots. -->
+  <div class="flex items-center gap-2 border-b border-edge px-4 py-2.5">
+    <span class="flex gap-1.5" aria-hidden="true">
+      <span class="h-2.5 w-2.5 rounded-full bg-edge"></span>
+      <span class="h-2.5 w-2.5 rounded-full bg-edge"></span>
+      <span class="h-2.5 w-2.5 rounded-full bg-edge"></span>
+    </span>
+    {filename && <span class="font-mono text-xs text-muted">{filename}</span>}
+  </div>
+
+  <!-- Astro's built-in Code component runs Shiki at build time, so visitors
+       download zero highlighting code. It is just coloured HTML. -->
+  <div class="overflow-x-auto p-4 text-sm [&_pre]:!bg-transparent">
+    <Code code={code.trimEnd()} lang={lang as any} theme="github-dark" />
+  </div>
+</div>

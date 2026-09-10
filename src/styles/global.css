@@ -1,0 +1,154 @@
+/*
+  GLOBAL STYLES
+  =============
+  This file defines the look of the whole site: the colour palette, the fonts,
+  and a few base rules. Individual pages should use the Tailwind classes named
+  here (like `text-gold` or `bg-ink`) instead of writing raw colours.
+*/
+
+@import 'tailwindcss';
+
+/* The self-hosted fonts. "Variable" versions include every weight in one file,
+   and hosting them ourselves means visitors' browsers never have to phone a
+   third party like Google to read our site. */
+@import '@fontsource-variable/space-grotesk';
+@import '@fontsource-variable/jetbrains-mono';
+
+/*
+  THE DESIGN SYSTEM
+  Everything named in this @theme block becomes a Tailwind class automatically.
+  Defining --color-gold here is what creates `text-gold`, `bg-gold`,
+  `border-gold`, and so on. Add a colour here rather than pasting hex codes
+  into pages, so the whole site can be re-skinned from one place.
+*/
+@theme {
+  /* Backgrounds, darkest first */
+  --color-ink: #0b0c0e; /* the near-black page background */
+  --color-surface: #141619; /* cards, panels, code blocks */
+  --color-edge: #24272c; /* hairline borders between panels */
+
+  /* Text */
+  --color-bone: #e8e9ec; /* main off-white body text */
+  --color-muted: #9aa0a8; /* captions and secondary text */
+
+  /* Accents. Gold is the hornet reference; use it for emphasis, not for walls
+     of text. Cyan is for links. Acid green means "success". */
+  --color-gold: #ffc400;
+  --color-cyan: #22d3ee;
+  --color-acid: #a3e635;
+
+  /* Fonts. Space Grotesk for headings and reading, JetBrains Mono anywhere we
+     are imitating a terminal or showing code. */
+  --font-display: 'Space Grotesk Variable', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', ui-monospace, monospace;
+}
+
+/*
+  MARKDOWN CONTENT
+  ================
+  Tailwind deliberately strips the browser's default styling from everything,
+  which is what we want for page layout but wrong for text written by club
+  members. Without this, a bulleted list in a Markdown file loses its bullets
+  and a numbered list loses its numbers.
+
+  Put class="md-content" on any element that a Markdown <Content /> is rendered
+  inside, and lists, bold text, code and links come out looking right.
+*/
+@layer components {
+  .md-content ul {
+    list-style: disc;
+    padding-left: 1.25rem;
+  }
+
+  .md-content ol {
+    list-style: decimal;
+    padding-left: 1.25rem;
+  }
+
+  .md-content li {
+    margin-block: 0.25rem;
+  }
+
+  .md-content a {
+    color: var(--color-cyan);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+  }
+
+  .md-content a:hover {
+    color: var(--color-gold);
+  }
+
+  .md-content strong {
+    color: var(--color-bone);
+    font-weight: 600;
+  }
+
+  /* Short `code spans` written with backticks. */
+  .md-content :not(pre) > code {
+    border-radius: 0.25rem;
+    background-color: var(--color-ink);
+    padding: 0.1rem 0.35rem;
+    font-family: var(--font-mono);
+    font-size: 0.9em;
+    color: var(--color-gold);
+  }
+
+  /* Wide code blocks scroll inside their own box rather than stretching the
+     page sideways on a phone. */
+  .md-content pre {
+    overflow-x: auto;
+    border-radius: 0.5rem;
+    padding: 1rem;
+  }
+}
+
+/*
+  BASE RULES
+  Applied to plain HTML elements across every page.
+*/
+@layer base {
+  html {
+    /* Clicking an in-page link glides instead of jumping... */
+    scroll-behavior: smooth;
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--color-ink);
+    color: var(--color-bone);
+    font-family: var(--font-display);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Anyone tabbing through the site with a keyboard needs to see where they
+     are. Never delete this without replacing it with something visible. */
+  :focus-visible {
+    outline: 2px solid var(--color-gold);
+    outline-offset: 3px;
+    border-radius: 2px;
+  }
+
+  /* While the boot intro is starting up, keep the page behind it hidden so it
+     does not flash into view for a moment first. The `data-booting` mark is
+     put on by a short script in the page head and taken off as soon as the
+     intro is finished, skipped, or fails to load. */
+  html[data-booting] body > *:not(#boot-root) {
+    visibility: hidden;
+  }
+
+  /* Some people get motion sick or distracted by animation, and tell their
+     computer so in their accessibility settings. When they do, we honour it. */
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
+}

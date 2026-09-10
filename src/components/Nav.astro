@@ -1,0 +1,73 @@
+---
+/**
+ * SITE NAVIGATION
+ * ===============
+ * The bar across the top of every page. To add a page to the menu, add one
+ * line to the NAV_LINKS list below — and notice that the path is written the
+ * simple way ('/build'), because href() adds the /Dev-Club part for us.
+ */
+
+import { href } from '../lib/href';
+import { SITE_LOGO } from '../config/site';
+
+// The menu. Order here is the order on screen.
+const NAV_LINKS = [
+  { label: 'Build', path: '/build' },
+  { label: 'Learn', path: '/learn' },
+  { label: 'Connect', path: '/connect' },
+  { label: 'Join', path: '/join' },
+];
+
+// Which page are we on right now? Used to mark the current link so visitors
+// can tell where they are. We compare without any trailing slash so that
+// '/Dev-Club/build' and '/Dev-Club/build/' both count as a match.
+const current = Astro.url.pathname.replace(/\/$/, '');
+---
+
+<header class="sticky top-0 z-40 border-b border-edge bg-ink/85 backdrop-blur">
+  <nav
+    class="mx-auto flex max-w-6xl items-center justify-between gap-4 px-5 py-4"
+    aria-label="Main"
+  >
+    <!-- The logo doubles as the link home. -->
+    {/*
+      whitespace-nowrap stops the logo breaking into three lines on a phone.
+      The word "while" is hidden on the narrowest screens so the menu still
+      fits next to it; the full name is always available to screen readers.
+    */}
+    <a
+      href={href('/')}
+      class="whitespace-nowrap font-mono text-sm font-bold tracking-tight text-bone transition-colors hover:text-gold sm:text-base"
+      aria-label={`${SITE_LOGO} — home`}
+    >
+      <span class="hidden text-gold sm:inline">while&#32;</span><span
+        class="text-muted">&#123;</span
+      >&#32;Dev Club&#32;<span class="text-muted">&#125;</span>
+    </a>
+
+    {/* flex-wrap is the safety net: if the menu ever grows past the width of a
+        phone screen, the extra links drop to a second row instead of pushing
+        the page sideways. */}
+    <ul class="flex flex-wrap items-center justify-end gap-x-0.5 gap-y-1 sm:gap-2">
+      {
+        NAV_LINKS.map((link) => {
+          const isCurrent = current === href(link.path);
+          return (
+            <li>
+              <a
+                href={href(link.path)}
+                aria-current={isCurrent ? 'page' : undefined}
+                class:list={[
+                  'rounded px-2 py-2 font-mono text-xs transition-colors hover:text-gold sm:px-3 sm:text-sm',
+                  isCurrent ? 'text-gold' : 'text-muted',
+                ]}
+              >
+                {link.label}
+              </a>
+            </li>
+          );
+        })
+      }
+    </ul>
+  </nav>
+</header>

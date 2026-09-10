@@ -1,0 +1,27 @@
+---
+/**
+ * TERMINAL PROMPT LABEL
+ * =====================
+ * A small line of text styled like something typed at a command line, e.g.
+ *
+ *     $ dev-club --next-meeting
+ *
+ * Used as a section label so headings feel like they belong in a developer
+ * space. Purely decorative, so the "$" is hidden from screen readers.
+ */
+
+interface Props {
+  /** The command text shown after the prompt symbol. */
+  command: string;
+  /** Extra Tailwind classes. */
+  class?: string;
+}
+
+const { command, class: className = '' } = Astro.props;
+---
+
+{/* The space after the $ is written out deliberately: normal spacing between
+    these two tags collapses away when the page is built. */}
+<p class:list={['font-mono text-sm text-muted', className]}>
+  <span class="text-gold" aria-hidden="true">$</span>&#32;{command}
+</p>

@@ -1,0 +1,100 @@
+---
+/**
+ * LEARN PAGE
+ * ==========
+ * The learning tracks, ordered by the `order` number in each Markdown file in
+ * src/content/tracks/. Each track can include a short code sample, which gets
+ * real syntax colouring through the CodePanel component.
+ */
+
+import { getCollection, render } from 'astro:content';
+import { Icon } from 'astro-icon/components';
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import HexGrid from '../components/HexGrid.astro';
+import Prompt from '../components/Prompt.astro';
+import CodePanel from '../components/CodePanel.astro';
+
+// Lowest `order` number first, so the beginner tracks lead.
+const tracks = (await getCollection('tracks')).sort(
+  (a, b) => a.data.order - b.data.order,
+);
+
+// Each track's Markdown body has to be rendered into HTML before we can show
+// it. Doing that up front keeps the markup below simple.
+const rendered = await Promise.all(
+  tracks.map(async (track) => ({
+    data: track.data,
+    Content: (await render(track)).Content,
+  })),
+);
+
+// How each difficulty level is coloured.
+const LEVEL_STYLES: Record<string, string> = {
+  'start here': 'border-acid/40 text-acid',
+  intermediate: 'border-gold/40 text-gold',
+  advanced: 'border-cyan/40 text-cyan',
+};
+---
+
+<BaseLayout
+  title="Learn"
+  description="Learning tracks at Dev Club: GitHub, Python, cloud deployment with Azure, and Apple development with Swift."
+>
+  <section class="relative overflow-hidden border-b border-edge">
+    <HexGrid class="opacity-50" />
+    <div class="relative mx-auto max-w-6xl px-5 py-16">
+      <Prompt command="dev-club learn --list" />
+      <h1 class="mt-4 font-mono text-4xl font-bold tracking-tight">Learn</h1>
+      <p class="mt-5 max-w-xl leading-relaxed text-muted">
+        Pick a track and start where you are. The two marked&#32;<span
+          class="text-acid">start here</span
+        >&#32;assume you have never written a line of code, and that is a
+        completely normal place to begin.
+      </p>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-6xl space-y-6 px-5 py-14">
+    {
+      rendered.map(({ data, Content }) => (
+        <article class="rounded-lg border border-edge bg-surface p-6 sm:p-8">
+          <div class="grid gap-8 lg:grid-cols-2">
+            {/* Left: what the track is. */}
+            <div>
+              <div class="flex items-center gap-3">
+                <Icon name={`lucide:${data.icon}`} class="h-5 w-5 text-gold" />
+                <h2 class="font-mono text-xl font-semibold">{data.title}</h2>
+                <span
+                  class:list={[
+                    'rounded-full border px-2.5 py-0.5 font-mono text-xs',
+                    LEVEL_STYLES[data.level] ?? 'border-edge text-muted',
+                  ]}
+                >
+                  {data.level}
+                </span>
+              </div>
+
+              <p class="mt-4 text-sm leading-relaxed text-bone">{data.summary}</p>
+
+              {/* The Markdown body of the track file goes here. */}
+              <div class="md-content mt-4 space-y-3 text-sm leading-relaxed text-muted">
+                <Content />
+              </div>
+            </div>
+
+            {/* Right: the code sample, if the track file included one. */}
+            {data.snippet && (
+              <CodePanel
+                code={data.snippet}
+                lang={data.snippetLang}
+                filename={`${data.title.toLowerCase().split(' ')[0]}-example`}
+                class="self-start"
+              />
+            )}
+          </div>
+        </article>
+      ))
+    }
+  </section>
+</BaseLayout>

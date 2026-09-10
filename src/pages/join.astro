@@ -1,0 +1,165 @@
+---
+/**
+ * JOIN PAGE
+ * =========
+ * Meeting details, what to expect, and how to sign up.
+ *
+ * IMPORTANT — why there is no sign-up form on this page:
+ * This website is a set of static files. It cannot receive or store anything,
+ * and it should not: student sign-ups belong in a system the school already
+ * approved and controls. So we link out to a school-managed form instead of
+ * collecting names, emails, or anything else here.
+ *
+ * Set CLUB.interestFormUrl in src/config/site.ts to switch the placeholder
+ * below for the real link.
+ */
+
+import { Icon } from 'astro-icon/components';
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import HexGrid from '../components/HexGrid.astro';
+import Prompt from '../components/Prompt.astro';
+import { CLUB } from '../config/site';
+
+// Until somebody fills in the real form link, show an honest placeholder
+// rather than a button that goes nowhere.
+const hasForm = CLUB.interestFormUrl.length > 0;
+
+/** What a first meeting is actually like. Written to lower the barrier. */
+const EXPECTATIONS = [
+  {
+    icon: 'user-round-check',
+    title: 'No experience needed',
+    blurb:
+      'Most people here started with none. If you have never opened a code editor, you are exactly who these meetings are for.',
+  },
+  {
+    icon: 'laptop',
+    title: 'Bring a laptop if you have one',
+    blurb:
+      'A Chromebook is fine — a lot of what we do runs in a browser. If you do not have one, use a lab machine.',
+  },
+  {
+    icon: 'calendar-check',
+    title: 'Come when you can',
+    blurb:
+      'Sports, work, and other clubs happen. Show up when you are able; nobody is keeping an attendance streak.',
+  },
+  {
+    icon: 'heart-handshake',
+    title: 'Help the person next to you',
+    blurb:
+      'The only real rule. Nobody here gets mocked for not knowing something, ever.',
+  },
+];
+---
+
+<BaseLayout
+  title="Join"
+  description="How to join Dev Club at Novato High School: meeting times, what to expect, and the interest form."
+>
+  <section class="relative overflow-hidden border-b border-edge">
+    <HexGrid class="opacity-50" />
+    <div class="relative mx-auto max-w-6xl px-5 py-16">
+      <Prompt command="dev-club join --request-access" />
+      <h1 class="mt-4 font-mono text-4xl font-bold tracking-tight">Join</h1>
+      <p class="mt-5 max-w-xl leading-relaxed text-muted">
+        Turn up to a meeting. That is the whole process. Everything below is
+        just detail.
+      </p>
+    </div>
+  </section>
+
+  {/* ------------------------------------------------------------------
+      WHEN AND WHERE
+  ------------------------------------------------------------------ */}
+  <section class="mx-auto max-w-6xl px-5 py-14">
+    <div class="rounded-lg border border-edge bg-surface p-6 sm:p-8">
+      <Prompt command="cat meeting.txt" />
+
+      <dl class="mt-5 grid gap-5 font-mono text-sm sm:grid-cols-3">
+        <div>
+          <dt class="text-muted">when</dt>
+          <dd class="mt-1 text-lg text-gold">{CLUB.meetingDay}</dd>
+        </div>
+        <div>
+          <dt class="text-muted">time</dt>
+          <dd class="mt-1 text-lg text-gold">{CLUB.meetingTime}</dd>
+        </div>
+        <div>
+          <dt class="text-muted">where</dt>
+          <dd class="mt-1 text-lg text-gold">{CLUB.meetingRoom}</dd>
+        </div>
+      </dl>
+
+      <div class="mt-8 flex flex-wrap items-center gap-4">
+        {
+          hasForm ? (
+            <a
+              href={CLUB.interestFormUrl}
+              class="inline-flex items-center gap-2 rounded border border-gold bg-gold px-5 py-2.5 font-mono text-sm font-medium text-ink transition-colors hover:bg-transparent hover:text-gold"
+            >
+              <Icon name="lucide:clipboard-list" class="h-4 w-4" />
+              Fill out the interest form
+            </a>
+          ) : (
+            <p class="rounded border border-dashed border-edge px-5 py-3 font-mono text-sm text-muted">
+              Interest form link coming soon &mdash; for now, just come to a
+              meeting or email {CLUB.advisorName}.
+            </p>
+          )
+        }
+
+        {
+          CLUB.advisorEmail && (
+            <a
+              href={`mailto:${CLUB.advisorEmail}`}
+              class="font-mono text-sm text-cyan transition-colors hover:text-gold"
+            >
+              email {CLUB.advisorName}
+            </a>
+          )
+        }
+      </div>
+    </div>
+  </section>
+
+  {/* ------------------------------------------------------------------
+      WHAT TO EXPECT
+  ------------------------------------------------------------------ */}
+  <section class="mx-auto max-w-6xl px-5 pb-14">
+    <Prompt command="cat expectations.md" />
+    <h2 class="mt-3 font-mono text-2xl font-semibold">What to expect</h2>
+
+    <div class="mt-8 grid gap-5 sm:grid-cols-2">
+      {
+        EXPECTATIONS.map((item) => (
+          <div class="rounded-lg border border-edge bg-surface p-6">
+            <div class="flex items-center gap-3">
+              <Icon name={`lucide:${item.icon}`} class="h-5 w-5 text-gold" />
+              <h3 class="font-mono text-base font-semibold">{item.title}</h3>
+            </div>
+            <p class="mt-3 text-sm leading-relaxed text-muted">{item.blurb}</p>
+          </div>
+        ))
+      }
+    </div>
+  </section>
+
+  {/* ------------------------------------------------------------------
+      PRIVACY — worth stating plainly on the page that asks people to sign up.
+  ------------------------------------------------------------------ */}
+  <section class="mx-auto max-w-6xl px-5 pb-16">
+    <div class="rounded-lg border border-edge p-6">
+      <h2 class="font-mono text-sm font-semibold text-bone">
+        About your information
+      </h2>
+      <p class="mt-3 text-sm leading-relaxed text-muted">
+        This website collects nothing. It has no accounts, no tracking, and no
+        forms that send anywhere &mdash; it is a set of plain files served by
+        GitHub. Sign-ups go through the school's own form, and club members are
+        credited on this site by GitHub username only, never by full name.
+      </p>
+    </div>
+  </section>
+</BaseLayout>
