@@ -1,8 +1,6 @@
 # Dev Club site — what's next
 
-The site is built, merged, and deployed to
-https://novato-high-school.github.io/Dev-Club/ — though see the filter blocker
-below. This file tracks what is left to do.
+The site is built and deployed. This file tracks what is left to do.
 
 For how to add content, see [CONTRIBUTING.md](CONTRIBUTING.md).
 For how the site is put together, see [README.md](README.md).
@@ -32,27 +30,8 @@ remark/rehype with its own Markdown processor, Sätteri.
 
 Nothing here needs code. All of it is blocking a real launch.
 
-### Blocker: github.io is filtered on school devices
-
-The site is live and correct, but school devices cannot reach it — the district
-web filter intercepts `novato-high-school.github.io` and serves a block page
-instead. This is not a fault in the site; the same build loads fine off the
-school network. It does mean students cannot see the club website at school,
-which is most of the point of having one.
-
-Two ways out, not mutually exclusive:
-
-- [ ] **Ask IT to allowlist the hostname.** Filters usually block all of
-      `*.github.io` at once, because anyone can publish anything there. Asking
-      for the single hostname `novato-high-school.github.io` is a much smaller
-      request than asking for github.io in general.
-- [ ] **Move to a school domain** (e.g. `devclub.nusd.org`). A district-owned
-      hostname is far more likely to pass the filter on its own, and it reads as
-      official to parents. GitHub still does the hosting. See section 4 — the
-      code was written for this and it is a one-line change plus DNS.
-
-The second is the real fix. The first is the fast one.
-
+- [ ] Merge `site/initial-build` — https://github.com/Novato-High-School/Dev-Club/pull/new/site/initial-build
+- [ ] Repo Settings → Pages → Source → **GitHub Actions** (do this *before* merging, or the first deploy fails)
 - [ ] Meeting room and time — `CLUB` in `src/config/site.ts`, and the `where:` line in `src/content/updates/next-meeting.md`, which overrides it on the home page
 - [ ] Advisor's **school** email (`@nusd.org`, never a personal address) — `CLUB.advisorEmail`
 - [ ] Interest form URL — `CLUB.interestFormUrl`. Keep the form in the school's Google Workspace so submissions land somewhere already approved for student data.
@@ -117,11 +96,10 @@ files. Cheap to try, easy to overdo; keep text readable.
 for a rotating wireframe `{ }`. Genuinely fun, and genuinely the most work here —
 watch the page weight, and give it a static fallback.
 
-**Custom domain.** No longer optional — see the filter blocker in section 1.
-Two steps: set `BASE = '/'` and `SITE_URL` in `src/config/site.ts`, and add
-`public/CNAME` plus DNS records pointing at GitHub Pages. Every link on the site
-already goes through the `href()` helper, so nothing else needs editing. This
-was designed for from the start.
+**Custom domain.** Two steps: set `BASE = '/'` and `SITE_URL` in
+`src/config/site.ts`, and add `public/CNAME` plus DNS records. Every link on the
+site already goes through the `href()` helper, so nothing else needs editing.
+This was designed for from the start.
 
 ---
 
