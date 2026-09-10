@@ -1,0 +1,45 @@
+# PULL REQUEST CHECK
+# ==================
+# Runs on every pull request and simply tries to build the site. It publishes
+# nothing — it just answers one question: "would this change break the site?"
+#
+# This is the safety net for club members adding Markdown files. If somebody
+# misspells a field name or uses a status value that does not exist, this turns
+# red and says exactly which file and field is wrong, BEFORE it is merged. The
+# live site is never affected by a failing check here.
+
+name: Check the site builds
+
+on:
+  pull_request:
+    branches: [main]
+
+# Only needs to read the code.
+permissions:
+  contents: read
+
+# If somebody pushes twice to the same pull request, only check the newer one.
+concurrency:
+  group: check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the pull request
+        uses: actions/checkout@v7
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      # `npm ci` installs the exact versions in package-lock.json, so the check
+      # tests the same thing every time.
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build the site
+        run: npm run build

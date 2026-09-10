@@ -1,0 +1,129 @@
+---
+/**
+ * BASE LAYOUT
+ * ===========
+ * The frame every page sits inside: the <head> information, the navigation
+ * bar, the footer, and the boot terminal. Pages hand it a title and a
+ * description, and fill in the middle with their own content.
+ *
+ * Using it looks like this:
+ *
+ *     ---
+ *     import BaseLayout from '../layouts/BaseLayout.astro';
+ *     ---
+ *     <BaseLayout title="Build" description="What the club is making.">
+ *       <h1>Build</h1>
+ *     </BaseLayout>
+ */
+
+import '../styles/global.css';
+
+import Nav from '../components/Nav.astro';
+import Footer from '../components/Footer.astro';
+import BootTerminal from '../components/BootTerminal.astro';
+import { href } from '../lib/href';
+import {
+  SITE_NAME,
+  SITE_DESCRIPTION,
+  BOOT_MODE,
+  BOOT_STORAGE_KEY,
+} from '../config/site';
+
+interface Props {
+  /** Shown in the browser tab and in search results. */
+  title: string;
+  /** One sentence summary, used by search engines and link previews. */
+  description?: string;
+}
+
+const { title, description = SITE_DESCRIPTION } = Astro.props;
+
+// The full public address of this exact page. Search engines use it to work
+// out which copy of a page is the real one.
+const canonical = new URL(Astro.url.pathname, Astro.site).toString();
+
+// The overlay version of the intro only makes sense in these two modes.
+// In 'hero' mode the home page places the terminal inline instead.
+const showOverlayBoot = BOOT_MODE === 'skippable' || BOOT_MODE === 'hard';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>{title === SITE_NAME ? title : `${title} — ${SITE_NAME}`}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
+
+    <!-- Controls how the site looks when somebody pastes a link into a chat. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content={SITE_NAME} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:url" content={canonical} />
+    <meta name="twitter:card" content="summary_large_image" />
+
+    <meta name="theme-color" content="#0b0c0e" />
+    <link rel="icon" href={href('/favicon.svg')} type="image/svg+xml" />
+
+    {
+      /*
+        This tiny script runs before the page is painted. Its only job is to
+        decide whether this visitor is about to see the boot intro, and if so
+        mark the page so the content behind it stays hidden until the terminal
+        is ready. Without it you would see the site flash for a moment first.
+
+        The safety timer matters: if the main terminal code fails to load for
+        any reason, the mark is removed after four seconds and the site appears
+        normally. A broken intro must never hide the website.
+      */
+      showOverlayBoot && (
+        <script
+          is:inline
+          set:html={`
+            try {
+              if (!localStorage.getItem(${JSON.stringify(BOOT_STORAGE_KEY)})) {
+                document.documentElement.setAttribute('data-booting', '');
+              }
+            } catch (e) {
+              document.documentElement.setAttribute('data-booting', '');
+            }
+            setTimeout(function () {
+              if (!document.getElementById('boot-root')) {
+                document.documentElement.removeAttribute('data-booting');
+              }
+            }, 4000);
+          `}
+        />
+      )
+    }
+  </head>
+
+  <body class="flex min-h-screen flex-col">
+    <!-- Lets keyboard users jump straight past the menu to the real content. -->
+    <a
+      href="#main"
+      class="sr-only rounded bg-gold px-4 py-2 font-mono text-ink focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-50"
+    >
+      Skip to content
+    </a>
+
+    <Nav />
+
+    <main id="main" class="flex-1">
+      <slot />
+    </main>
+
+    <Footer />
+
+    {/*
+      The boot terminal goes last on purpose. The real page above is already
+      complete and readable, so search engines and anyone without JavaScript
+      get the whole site. The terminal is an extra layer on top, not a wall in
+      front. See src/components/BootTerminal.astro.
+    */}
+    {showOverlayBoot && <BootTerminal />}
+  </body>
+</html>

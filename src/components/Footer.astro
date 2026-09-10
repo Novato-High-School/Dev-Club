@@ -1,0 +1,66 @@
+---
+/**
+ * SITE FOOTER
+ * ===========
+ * Appears at the bottom of every page. Includes a "replay intro" button that
+ * clears the browser's memory of the boot terminal, so anyone can watch it
+ * again. That button hides itself if the page has no JavaScript running.
+ */
+
+import { href } from '../lib/href';
+import { CLUB, BOOT_STORAGE_KEY, BOOT_MODE } from '../config/site';
+
+const year = new Date().getFullYear();
+---
+
+<footer class="mt-24 border-t border-edge">
+  <div
+    class="mx-auto flex max-w-6xl flex-col gap-4 px-5 py-8 text-sm text-muted sm:flex-row sm:items-center sm:justify-between"
+  >
+    <p class="font-mono">
+      <span class="text-gold">//</span> Dev Club &middot; Novato High School &middot; {year}
+    </p>
+
+    <div class="flex items-center gap-5 font-mono">
+      <a href={CLUB.githubOrg} class="transition-colors hover:text-cyan">GitHub</a>
+      <a href={href('/join')} class="transition-colors hover:text-cyan">Join</a>
+
+      {/* Only worth showing when there is an intro to replay. */}
+      {
+        BOOT_MODE !== 'off' && (
+          <button
+            type="button"
+            id="replay-boot"
+            hidden
+            class="transition-colors hover:text-gold"
+          >
+            replay intro
+          </button>
+        )
+      }
+    </div>
+  </div>
+</footer>
+
+<script is:inline define:vars={{ storageKey: BOOT_STORAGE_KEY, bootMode: BOOT_MODE }}>
+  // This runs in the visitor's browser. Because the button starts hidden and
+  // is only revealed here, people browsing without JavaScript never see a
+  // button that would do nothing for them.
+  if (bootMode !== 'off') {
+    const button = document.getElementById('replay-boot');
+    if (button) {
+      button.hidden = false;
+      button.addEventListener('click', () => {
+        // Forget that this visitor already saw the intro, then reload so it
+        // plays from the beginning.
+        try {
+          localStorage.removeItem(storageKey);
+        } catch {
+          // Some browsers block storage in private mode. Reloading is still
+          // the right move, so there is nothing to do here.
+        }
+        location.reload();
+      });
+    }
+  }
+</script>

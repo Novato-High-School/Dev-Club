@@ -1,0 +1,100 @@
+---
+/**
+ * BOOT TERMINAL
+ * =============
+ * The markup for the "boot the club" intro. The logic lives next door in
+ * src/scripts/boot-terminal.ts — read the comments at the top of that file for
+ * how the whole thing fits together.
+ *
+ * Everything below sits inside a <template> tag. The browser reads a template
+ * but does not display it, so the terminal does not exist until the script
+ * copies it out. That is what keeps the real website readable for search
+ * engines and for anyone whose JavaScript never arrives.
+ */
+
+interface Props {
+  /**
+   * 'overlay' covers the screen (used in skippable and hard modes).
+   * 'inline' sits inside the home page (used in hero mode).
+   */
+  variant?: 'overlay' | 'inline';
+}
+
+const { variant = 'overlay' } = Astro.props;
+
+// In hero mode the terminal is a panel on the page, so it should not pretend
+// to be a dialog box or claim to cover anything.
+const isOverlay = variant === 'overlay';
+---
+
+<template id="boot-template">
+  <div
+    class="flex items-center justify-center bg-ink p-4 transition-opacity duration-300 sm:p-8"
+    role={isOverlay ? 'dialog' : undefined}
+    aria-modal={isOverlay ? 'true' : undefined}
+    aria-label="Dev Club system terminal"
+  >
+    <div
+      class="flex h-full max-h-[32rem] w-full max-w-2xl flex-col overflow-hidden rounded-lg border border-edge bg-surface shadow-2xl"
+    >
+      <!-- Title bar, styled after a terminal window. -->
+      <div class="flex items-center justify-between border-b border-edge px-4 py-2.5">
+        <span class="font-mono text-xs text-muted">dev-club — bash — 80×24</span>
+        <button
+          type="button"
+          data-boot-skip
+          class="rounded px-2 py-1 font-mono text-xs text-muted transition-colors hover:text-gold"
+        >
+          Skip &rarr;
+        </button>
+      </div>
+
+      <!--
+        Where the text appears. aria-live="polite" tells screen readers to
+        announce new lines as they arrive, so the terminal is followable
+        without seeing it.
+      -->
+      <div
+        data-boot-output
+        aria-live="polite"
+        class="flex-1 overflow-y-auto p-4 font-mono text-sm leading-relaxed"
+      >
+      </div>
+
+      <!--
+        A real <input> rather than a fake blinking cursor. That matters: real
+        inputs work with phone keyboards, with autocorrect turned off, with
+        password managers out of the way, and with assistive technology.
+      -->
+      <form data-boot-form class="border-t border-edge p-4">
+        <label class="flex items-center gap-2 font-mono text-sm">
+          <span class="text-gold" aria-hidden="true">&gt;</span>
+          <span class="sr-only">Type a command</span>
+          <input
+            data-boot-input
+            type="text"
+            autocomplete="off"
+            autocapitalize="off"
+            autocorrect="off"
+            spellcheck="false"
+            placeholder="type help"
+            class="w-full bg-transparent text-bone caret-gold outline-none placeholder:text-muted/60"
+          />
+        </label>
+      </form>
+    </div>
+  </div>
+</template>
+
+<script>
+  // Hand the terminal its settings and start it. Astro bundles this file, so
+  // the import below is turned into a normal script the browser can run.
+  import { startBootTerminal } from '../scripts/boot-terminal';
+  import { BOOT_MODE, BOOT_STORAGE_KEY } from '../config/site';
+
+  // 'off' never reaches this point, but TypeScript does not know that, so we
+  // check and narrow the type here.
+  if (BOOT_MODE !== 'off') {
+    startBootTerminal({ mode: BOOT_MODE, storageKey: BOOT_STORAGE_KEY });
+  }
+</script>
