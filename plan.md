@@ -28,11 +28,29 @@ remark/rehype with its own Markdown processor, Sätteri.
 
 ## 1. Launch checklist
 
-Nothing here needs code. All of it is blocking a real launch.
+### Blocker: github.io is filtered on school devices
 
-- [ ] Merge `site/initial-build` — https://github.com/Novato-High-School/Dev-Club/pull/new/site/initial-build
-- [ ] Repo Settings → Pages → Source → **GitHub Actions** (do this *before* merging, or the first deploy fails)
-- [ ] Meeting room and time — `CLUB` in `src/config/site.ts`, and the `where:` line in `src/content/updates/next-meeting.md`, which overrides it on the home page
+The site is live and correct, but school devices cannot reach it — the district
+web filter intercepts `novato-high-school.github.io` and serves a block page.
+This is not a fault in the site; the same build loads fine off the school
+network. It does mean students cannot see the club website at school, which is
+most of the point of having one.
+
+**In progress:** a school domain has been requested. Once DNS points at GitHub
+Pages, the switch on our side is two lines — `BASE = '/'` and `SITE_URL` in
+`src/config/site.ts` — plus a `public/CNAME` file. Every link already goes
+through the `href()` helper, so nothing else changes.
+
+- [ ] Point DNS at GitHub Pages, then make the two-line switch
+- [ ] Worth doing while waiting: ask IT to allowlist the single hostname
+      `novato-high-school.github.io`. Filters usually block all of `*.github.io`
+      at once, so asking for one hostname is a much smaller request.
+
+Good news: `github.com` itself is **not** blocked, so contributing, github.dev
+and Codespaces all work on school devices today.
+
+### Still to fill in
+
 - [ ] Advisor's **school** email (`@nusd.org`, never a personal address) — `CLUB.advisorEmail`
 - [ ] Interest form URL — `CLUB.interestFormUrl`. Keep the form in the school's Google Workspace so submissions land somewhere already approved for student data.
 - [ ] Delete `src/content/speakers/example-guest.md` once a real guest has visited
@@ -64,7 +82,27 @@ fix what it finds.
 
 ---
 
-## 3. Fill it with real content
+## 3. Now that tracks lead somewhere
+
+Built: every track has its own page at `/learn/<name>` with prerequisites,
+outcomes, real steps and curated free resources; a `/start` page covers the
+account → GitHub Education → join the org → first contribution path; and a
+devcontainer means Codespaces sets itself up. The intro terminal has 14 hidden
+commands with a `.secrets` map that tracks what you have found.
+
+What that opens up:
+
+- [ ] **Watch where people actually get stuck.** The steps are a guess until a
+      real new member walks through them at a meeting. Fix what trips them.
+- [ ] **Add tracks as workshops actually run.** Web basics, game development,
+      and hardware have all come up. One Markdown file each.
+- [ ] **Let members add their own easter eggs.** It is three lines and a genuine
+      first code contribution — see CONTRIBUTING.md. Good task for somebody who
+      has done a Markdown PR and wants to touch real code next.
+
+---
+
+## 4. Fill it with real content
 
 The site is a shell until this happens, and this is the part members can do
 without any code.
@@ -77,7 +115,7 @@ without any code.
 
 ---
 
-## 4. Ideas from the original brief, not yet built
+## 5. Ideas from the original brief, not yet built
 
 Kept because they are still good, ordered roughly by value per effort.
 
@@ -96,14 +134,11 @@ files. Cheap to try, easy to overdo; keep text readable.
 for a rotating wireframe `{ }`. Genuinely fun, and genuinely the most work here —
 watch the page weight, and give it a static fallback.
 
-**Custom domain.** Two steps: set `BASE = '/'` and `SITE_URL` in
-`src/config/site.ts`, and add `public/CNAME` plus DNS records. Every link on the
-site already goes through the `href()` helper, so nothing else needs editing.
-This was designed for from the start.
+**Custom domain.** Now tracked as the blocker in section 1 — the request is in.
 
 ---
 
-## 5. Ongoing
+## 6. Ongoing
 
 - Keep `CONTRIBUTING.md` true. If a step changes, fix it the same day —
   instructions that lie are worse than none.

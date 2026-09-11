@@ -1,0 +1,50 @@
+{
+  // WHAT THIS FILE IS
+  // =================
+  // A recipe for a ready-made computer in the cloud. When somebody opens this
+  // repository in a GitHub Codespace, GitHub reads this file, builds a machine
+  // with Node already installed, runs `npm install`, and hands them a working
+  // VS Code in their browser.
+  //
+  // The point: a member can work on the real club website from a school
+  // Chromebook, with nothing to install and nothing to configure.
+  //
+  // Only needed for people changing CODE. If you are adding a project or a
+  // meeting recap, github.dev is faster — see CONTRIBUTING.md.
+  "name": "Dev Club site",
+
+  // A standard Node 22 environment, maintained by the Dev Containers project.
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:22",
+
+  "customizations": {
+    "vscode": {
+      // Extensions installed automatically, so the editor understands our files.
+      "extensions": [
+        "astro-build.astro-vscode",
+        "bradlc.vscode-tailwindcss",
+        "esbenp.prettier-vscode"
+      ],
+      "settings": {
+        "editor.formatOnSave": true
+      }
+    }
+  },
+
+  // Runs once when the codespace is first created.
+  "postCreateCommand": "npm install",
+
+  // Starts the dev server as soon as the codespace opens, so there is a live
+  // preview waiting rather than a blank screen.
+  "postAttachCommand": {
+    "server": "npm run dev"
+  },
+
+  // Astro serves on port 4321. Pop the preview open automatically.
+  "forwardPorts": [4321],
+  "portsAttributes": {
+    "4321": {
+      "label": "Dev Club site",
+      "onAutoForward": "openPreview"
+    }
+  }
+}
