@@ -2,7 +2,6 @@
 title: Recap — first meeting of the year
 date: 2026-09-04
 kind: recap
-where: TBD
 ---
 
 Good turnout for a first meeting. We went around and talked about what people
