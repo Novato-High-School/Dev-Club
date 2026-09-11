@@ -94,7 +94,9 @@ Did anything get finished? What is next?
 
 ## Add a learning track
 
-In [`src/content/tracks/`](src/content/tracks/):
+Each file in [`src/content/tracks/`](src/content/tracks/) becomes its own page
+at `/learn/<filename>`. Write the steps in the body — headings and numbered
+lists work and come out styled.
 
 ```markdown
 ---
@@ -102,20 +104,65 @@ title: Game Development
 summary: One sentence on what you will be able to do afterwards.
 icon: gamepad-2
 level: start here
+time: a few meetings
+needs:
+  - Nothing, or whatever somebody genuinely has to know first
+outcomes:
+  - Something the reader will be able to DO when they finish
+  - Three or four of these is plenty
 snippetLang: python
 snippet: |
   import pygame
   pygame.init()
+resources:
+  - label: Name of a free tutorial
+    url: https://example.com
+    note: One line on who it suits
 order: 50
 ---
 
-A paragraph or two about the track.
+## What you will actually do
+
+1. **First step.** What they do and why it matters.
+2. **Second step.**
+
+## When you are done
+
+Point them at something real on this site to go and do.
 ```
 
 - `icon` is any name from [lucide.dev/icons](https://lucide.dev/icons).
 - `level` is exactly one of `start here`, `intermediate`, `advanced`.
-- `order` decides the position on the page — lower numbers come first.
+- `order` decides position on the Learn page — lower numbers come first.
 - `snippet` needs the `|` after it, and every line of code indented two spaces.
+- `outcomes` should be things a person *does*, not things they "understand".
+- `resources` must be free. We do not send members to paywalls.
+
+---
+
+## Add an easter egg to the terminal
+
+The intro terminal has hidden commands. Adding one is three lines in
+[`src/scripts/boot-terminal.ts`](src/scripts/boot-terminal.ts), in the
+`EASTER_EGGS` block:
+
+```ts
+yourcommand: {
+  hint: 'A clue, shown in .secrets before somebody finds it.',
+  lines: [
+    ['What gets printed.', 'normal'],
+    ['', 'normal'],
+    ['A quieter second line.', 'dim'],
+  ],
+},
+```
+
+The styles are `normal`, `dim`, `gold`, `cyan`, `success`, and `error`. The
+count in `.secrets` and the nudge in `help` both update themselves — you do not
+have to change a number anywhere.
+
+Two rules: keep it kind (no joke that lands on a person), and make the `hint`
+solvable. An egg nobody can find is just dead code.
 
 ---
 
@@ -150,10 +197,31 @@ a typo for you.
 
 ---
 
+## Working in a browser
+
+You do not need to install anything. Two options, both fine on a school
+Chromebook:
+
+**github.dev — for words.** Open the repository on GitHub and press the `.`
+key. GitHub becomes a code editor in the same tab. Instant, free, no setup.
+Perfect for adding a project or a recap. It cannot run the site.
+
+**Codespaces — for code.** From the repository, click **Code → Codespaces →
+Create codespace**. You get a real computer in the cloud with the site running
+live beside your editor. It sets itself up from
+[`.devcontainer/devcontainer.json`](.devcontainer/devcontainer.json), which
+installs everything and starts the preview for you.
+
+Codespaces uses part of your account's monthly free allowance, so **stop it
+when you are done** — the button is in the Codespaces list on GitHub.
+
+The [Start here](https://novato-high-school.github.io/Dev-Club/start) page walks
+through both with pictures.
+
 ## Running the site on your own computer
 
-Only needed if you want to change the design or the code. You need
-[Node.js](https://nodejs.org) installed.
+Only if you would rather work locally. You need
+[Node.js](https://nodejs.org) 20 or newer.
 
 ```bash
 git clone https://github.com/Novato-High-School/Dev-Club.git
@@ -188,6 +256,7 @@ passes for you, it will pass on GitHub.
 | `src/layouts/`           | The frame every page sits inside.                      |
 | `src/styles/global.css`  | Colours and fonts.                                     |
 | `src/scripts/`           | Code that runs in the visitor's browser.               |
+| `.devcontainer/`         | The recipe for a Codespace.                            |
 | `.github/workflows/`     | The automatic deployment.                              |
 
 ---

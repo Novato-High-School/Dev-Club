@@ -1,0 +1,246 @@
+---
+/**
+ * ONE LEARNING TRACK
+ * ==================
+ * Builds a page for every Markdown file in src/content/tracks/. Adding a new
+ * track file automatically creates its page — there is nothing to register.
+ *
+ * The address comes from the filename: src/content/tracks/python.md becomes
+ * /learn/python.
+ */
+
+import { getCollection, render } from 'astro:content';
+import { Icon } from 'astro-icon/components';
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import HexGrid from '../../components/HexGrid.astro';
+import Prompt from '../../components/Prompt.astro';
+import CodePanel from '../../components/CodePanel.astro';
+import { href } from '../../lib/href';
+
+/**
+ * Tells Astro which pages to build. Astro calls this once at build time and
+ * makes one page per track it returns.
+ */
+export async function getStaticPaths() {
+  const tracks = await getCollection('tracks');
+  const ordered = tracks.sort((a, b) => a.data.order - b.data.order);
+
+  return ordered.map((track, index) => ({
+    params: { slug: track.id },
+    props: {
+      track,
+      // Hand each page its neighbours so it can offer a sensible "next".
+      previous: ordered[index - 1] ?? null,
+      next: ordered[index + 1] ?? null,
+    },
+  }));
+}
+
+const { track, previous, next } = Astro.props;
+const { Content } = await render(track);
+
+// How each difficulty level is coloured. Same palette as the Learn index.
+const LEVEL_STYLES: Record<string, string> = {
+  'start here': 'border-acid/40 text-acid',
+  intermediate: 'border-gold/40 text-gold',
+  advanced: 'border-cyan/40 text-cyan',
+};
+---
+
+<BaseLayout title={track.data.title} description={track.data.summary}>
+  {/* ------------------------------------------------------------------
+      HEADER
+  ------------------------------------------------------------------ */}
+  <section class="relative overflow-hidden border-b border-edge">
+    <HexGrid class="opacity-50" />
+    <div class="relative mx-auto max-w-4xl px-5 py-14">
+      <a
+        href={href('/learn')}
+        class="inline-flex items-center gap-1.5 font-mono text-xs text-muted transition-colors hover:text-gold"
+      >
+        <Icon name="lucide:arrow-left" class="h-3.5 w-3.5" />
+        all tracks
+      </a>
+
+      <div class="mt-5 flex flex-wrap items-center gap-3">
+        <Icon name={`lucide:${track.data.icon}`} class="h-6 w-6 text-gold" />
+        <h1 class="font-mono text-3xl font-bold tracking-tight">
+          {track.data.title}
+        </h1>
+        <span
+          class:list={[
+            'rounded-full border px-2.5 py-0.5 font-mono text-xs',
+            LEVEL_STYLES[track.data.level] ?? 'border-edge text-muted',
+          ]}
+        >
+          {track.data.level}
+        </span>
+      </div>
+
+      <p class="mt-4 max-w-2xl leading-relaxed text-muted">
+        {track.data.summary}
+      </p>
+
+      <p class="mt-4 font-mono text-xs text-muted">
+        <Icon name="lucide:clock" class="mr-1 inline h-3.5 w-3.5" />
+        roughly {track.data.time}
+      </p>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-4xl px-5 py-12">
+    {/* ----------------------------------------------------------------
+        BEFORE YOU START — prerequisites, so nobody gets stuck in step 1.
+    ---------------------------------------------------------------- */}
+    {
+      track.data.needs.length > 0 && (
+        <div class="rounded-lg border border-edge bg-surface p-6">
+          <h2 class="font-mono text-sm font-semibold text-bone">
+            Before you start
+          </h2>
+          <ul class="mt-3 space-y-2">
+            {track.data.needs.map((need) => (
+              <li class="flex gap-2.5 text-sm leading-relaxed text-muted">
+                <Icon
+                  name="lucide:circle-dot"
+                  class="mt-1 h-3.5 w-3.5 shrink-0 text-gold"
+                />
+                <span>{need}</span>
+              </li>
+            ))}
+          </ul>
+          <a
+            href={href('/start')}
+            class="mt-4 inline-flex items-center gap-1.5 font-mono text-xs text-cyan transition-colors hover:text-gold"
+          >
+            New here? Start with the setup steps
+            <Icon name="lucide:arrow-right" class="h-3.5 w-3.5" />
+          </a>
+        </div>
+      )
+    }
+
+    {/* ----------------------------------------------------------------
+        WHAT YOU WILL BE ABLE TO DO — the reason to bother.
+    ---------------------------------------------------------------- */}
+    {
+      track.data.outcomes.length > 0 && (
+        <div class="mt-6 rounded-lg border border-edge bg-surface p-6">
+          <h2 class="font-mono text-sm font-semibold text-bone">
+            When you finish, you can
+          </h2>
+          <ul class="mt-3 space-y-2">
+            {track.data.outcomes.map((outcome) => (
+              <li class="flex gap-2.5 text-sm leading-relaxed text-muted">
+                <Icon
+                  name="lucide:check"
+                  class="mt-0.5 h-3.5 w-3.5 shrink-0 text-acid"
+                />
+                <span>{outcome}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )
+    }
+
+    {/* ----------------------------------------------------------------
+        THE TRACK ITSELF — the Markdown body of the file.
+    ---------------------------------------------------------------- */}
+    <article
+      class="md-content mt-10 space-y-4 leading-relaxed text-muted [&_h2]:mt-9 [&_h2]:font-mono [&_h2]:text-xl [&_h2]:font-semibold [&_h2]:text-bone [&_ol]:space-y-2 [&_ul]:space-y-2"
+    >
+      <Content />
+    </article>
+
+    {/* ----------------------------------------------------------------
+        THE CODE SAMPLE
+    ---------------------------------------------------------------- */}
+    {
+      track.data.snippet && (
+        <div class="mt-10">
+          <Prompt command={`cat example.${track.data.snippetLang}`} class="mb-3" />
+          <CodePanel
+            code={track.data.snippet}
+            lang={track.data.snippetLang}
+            filename={`${track.id}-example`}
+          />
+        </div>
+      )
+    }
+
+    {/* ----------------------------------------------------------------
+        WHERE TO GO NEXT — outside the club.
+    ---------------------------------------------------------------- */}
+    {
+      track.data.resources.length > 0 && (
+        <div class="mt-12">
+          <Prompt command="ls ./resources" />
+          <h2 class="mt-3 font-mono text-2xl font-semibold">Keep going</h2>
+          <p class="mt-3 text-sm text-muted">
+            Free, and worth your time. You do not need all of them &mdash; pick
+            the one whose style suits you.
+          </p>
+
+          <ul class="mt-6 space-y-3">
+            {track.data.resources.map((resource) => (
+              <li>
+                <a
+                  href={resource.url}
+                  class="group flex items-start gap-3 rounded-lg border border-edge bg-surface p-4 transition-colors hover:border-gold/40"
+                >
+                  <Icon
+                    name="lucide:external-link"
+                    class="mt-0.5 h-4 w-4 shrink-0 text-muted transition-colors group-hover:text-gold"
+                  />
+                  <span>
+                    <span class="font-mono text-sm text-bone">
+                      {resource.label}
+                    </span>
+                    {resource.note && (
+                      <span class="mt-1 block text-sm text-muted">
+                        {resource.note}
+                      </span>
+                    )}
+                  </span>
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )
+    }
+
+    {/* ----------------------------------------------------------------
+        PREVIOUS / NEXT TRACK
+    ---------------------------------------------------------------- */}
+    <nav
+      class="mt-14 flex flex-wrap gap-4 border-t border-edge pt-6"
+      aria-label="Other tracks"
+    >
+      {
+        previous && (
+          <a
+            href={href(`/learn/${previous.id}`)}
+            class="flex items-center gap-2 font-mono text-sm text-muted transition-colors hover:text-gold"
+          >
+            <Icon name="lucide:arrow-left" class="h-4 w-4" />
+            {previous.data.title}
+          </a>
+        )
+      }
+      {
+        next && (
+          <a
+            href={href(`/learn/${next.id}`)}
+            class="ml-auto flex items-center gap-2 font-mono text-sm text-muted transition-colors hover:text-gold"
+          >
+            {next.data.title}
+            <Icon name="lucide:arrow-right" class="h-4 w-4" />
+          </a>
+        )
+      }
+    </nav>
+  </section>
+</BaseLayout>

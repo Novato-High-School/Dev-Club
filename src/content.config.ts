@@ -73,6 +73,24 @@ const tracks = defineCollection({
     snippetLang: z.string().default('python'),
     // Controls the order tracks appear in. Lower numbers come first.
     order: z.number().default(100),
+
+    // Roughly how long the track takes, in plain words rather than hours.
+    // For example "one meeting" or "a few weeks of lunches".
+    time: z.string().default("a few meetings"),
+
+    // What you need before starting. Written as full sentences, because they
+    // are shown to somebody deciding whether they are ready.
+    needs: z.array(z.string()).default([]),
+
+    // What you will be able to do when you are done. These become the
+    // checklist on the track page, so write them as things a person DOES.
+    outcomes: z.array(z.string()).default([]),
+
+    // Links out to the genuinely good free tutorials, so a track keeps going
+    // after the meeting ends. Keep this short and curated, not a link dump.
+    resources: z
+      .array(z.object({ label: z.string(), url: z.url(), note: z.string().optional() }))
+      .default([]),
   }),
 });
 

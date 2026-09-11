@@ -1,0 +1,284 @@
+---
+/**
+ * START HERE PAGE
+ * ===============
+ * The path from "I have never used GitHub" to "my change is live on the club
+ * website". Every learning track points here first, because all of them
+ * assume you can get code in and out of GitHub.
+ *
+ * The steps are written as data in STEPS below, then drawn once. To change the
+ * wording, edit the text there — you should not need to touch the markup.
+ */
+
+import { Icon } from 'astro-icon/components';
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import HexGrid from '../components/HexGrid.astro';
+import Prompt from '../components/Prompt.astro';
+import { href } from '../lib/href';
+import { CLUB } from '../config/site';
+
+/**
+ * The onboarding steps, in order.
+ *
+ * `where` is a promise to the reader about what they need to get it done:
+ *   'school' - works fine on a school Chromebook during a meeting
+ *   'home'   - needs a document or an adult, so do it outside the meeting
+ */
+const STEPS = [
+  {
+    n: 1,
+    title: 'Make a GitHub account',
+    where: 'school',
+    time: '5 minutes',
+    link: { label: 'github.com/signup', url: 'https://github.com/signup' },
+    body: [
+      'GitHub is where the club keeps its code. It is free, and it is the same site professional developers use every day.',
+      'You must be at least 13 to have an account — that is GitHub’s rule, not ours.',
+    ],
+    warning:
+      'Choose your username carefully. It is public, it is how you will be credited on this website, and it is awkward to change later. Pick something you would be happy showing a future employer — and do not use your full name, your student ID, or your birth year.',
+  },
+  {
+    n: 2,
+    title: 'Join the Novato High School organization',
+    where: 'school',
+    time: '2 minutes, then wait for the invite',
+    body: [
+      'Our projects live in a shared GitHub organization. Being a member means you can be assigned tasks and review other people’s work.',
+      'You cannot add yourself — an owner has to invite you. Bring your GitHub username to a meeting, and you will get an email invitation to accept.',
+    ],
+  },
+  {
+    n: 3,
+    title: 'Apply for GitHub Education',
+    where: 'home',
+    time: '10 minutes, then a few days to hear back',
+    link: {
+      label: 'Apply for GitHub Education',
+      url: 'https://github.com/settings/education/benefits',
+    },
+    body: [
+      'GitHub gives enrolled students a pile of professional developer tools for free. It is genuinely worth doing, and it is yours to keep as long as you are a student.',
+      'You need to prove you are enrolled. A school ID showing a current date, a class schedule, a transcript, or an enrollment letter all count.',
+    ],
+    warning:
+      'Do this one at home or with a teacher — you will be photographing a school document, and it is easier when you are not rushing at lunch.',
+  },
+  {
+    n: 4,
+    title: 'Make your first change',
+    where: 'school',
+    time: '15 minutes',
+    body: [
+      'The fastest real contribution is adding yourself to a project on this site, or fixing a typo you spotted. It is one Markdown file and you can do it entirely in the browser.',
+      'Open the repository, press the full stop key ( . ) and GitHub turns into a code editor in your browser. No installing anything.',
+    ],
+    isFirstTask: true,
+  },
+  {
+    n: 5,
+    title: 'Get a real workspace',
+    where: 'school',
+    time: '5 minutes to start it up',
+    body: [
+      'When you want to change how the site looks or works — not just its words — you need to actually run it. A Codespace is a full computer in the cloud, opened from a browser tab, with the site running live next to your code.',
+      'We have already written the setup, so it builds itself. Your GitHub account includes a monthly allowance of free Codespace time; stop it when you are done and it costs you nothing.',
+    ],
+  },
+];
+
+// Where the "press ." trick and the Codespace button should point.
+const REPO_URL = `${CLUB.githubOrg}/Dev-Club`;
+---
+
+<BaseLayout
+  title="Start here"
+  description="How to go from never having used GitHub to having your first change live on the Dev Club website."
+>
+  <section class="relative overflow-hidden border-b border-edge">
+    <HexGrid class="opacity-50" />
+    <div class="relative mx-auto max-w-6xl px-5 py-16">
+      <Prompt command="dev-club onboard --new-member" />
+      <h1 class="mt-4 font-mono text-3xl font-bold tracking-tight sm:text-4xl">
+        Start here
+      </h1>
+      <p class="mt-5 max-w-2xl leading-relaxed text-muted">
+        Five steps from never having touched GitHub to having your name &mdash;
+        well, your username &mdash; on something real. Most people get through
+        the first four in a single meeting.
+      </p>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-3xl px-5 py-14">
+    <ol class="space-y-5">
+      {
+        STEPS.map((step) => (
+          <li class="rounded-lg border border-edge bg-surface p-6">
+            <div class="flex flex-wrap items-baseline gap-x-3 gap-y-2">
+              {/* The step number, styled like a line number in an editor. */}
+              <span class="font-mono text-2xl font-bold text-gold">
+                {String(step.n).padStart(2, '0')}
+              </span>
+              <h2 class="font-mono text-lg font-semibold">{step.title}</h2>
+
+              <span class="ml-auto flex items-center gap-2 font-mono text-xs">
+                <span
+                  class:list={[
+                    'rounded-full border px-2 py-0.5',
+                    step.where === 'school'
+                      ? 'border-acid/40 text-acid'
+                      : 'border-cyan/40 text-cyan',
+                  ]}
+                >
+                  {step.where === 'school' ? 'do it at a meeting' : 'do it at home'}
+                </span>
+                <span class="text-muted">{step.time}</span>
+              </span>
+            </div>
+
+            <div class="mt-4 space-y-3 text-sm leading-relaxed text-muted">
+              {step.body.map((paragraph) => (
+                <p>{paragraph}</p>
+              ))}
+            </div>
+
+            {/* Anything the reader should know BEFORE doing the step. */}
+            {step.warning && (
+              <p class="mt-4 flex gap-2.5 rounded border border-gold/30 bg-gold/5 p-3 text-sm leading-relaxed text-bone">
+                <Icon
+                  name="lucide:triangle-alert"
+                  class="mt-0.5 h-4 w-4 shrink-0 text-gold"
+                />
+                <span>{step.warning}</span>
+              </p>
+            )}
+
+            {/* Step 4 gets the actual buttons, since it is the doing step. */}
+            {step.isFirstTask && (
+              <div class="mt-5 flex flex-wrap gap-3">
+                <a
+                  href={`https://github.dev/Novato-High-School/Dev-Club`}
+                  class="inline-flex items-center gap-2 rounded border border-gold bg-gold px-4 py-2 font-mono text-xs font-medium text-ink transition-colors hover:bg-transparent hover:text-gold"
+                >
+                  <Icon name="lucide:pencil" class="h-3.5 w-3.5" />
+                  Edit in the browser
+                </a>
+                <a
+                  href={href('/build')}
+                  class="inline-flex items-center gap-2 rounded border border-edge px-4 py-2 font-mono text-xs text-bone transition-colors hover:border-gold hover:text-gold"
+                >
+                  Find something to work on
+                </a>
+              </div>
+            )}
+
+            {/* Step 5 gets the Codespace launcher. */}
+            {step.n === 5 && (
+              <div class="mt-5 flex flex-wrap gap-3">
+                <a
+                  href={`https://codespaces.new/Novato-High-School/Dev-Club?quickstart=1`}
+                  class="inline-flex items-center gap-2 rounded border border-gold bg-gold px-4 py-2 font-mono text-xs font-medium text-ink transition-colors hover:bg-transparent hover:text-gold"
+                >
+                  <Icon name="lucide:cloud" class="h-3.5 w-3.5" />
+                  Open a Codespace
+                </a>
+              </div>
+            )}
+
+            {step.link && (
+              <a
+                href={step.link.url}
+                class="mt-4 inline-flex items-center gap-1.5 font-mono text-xs text-cyan transition-colors hover:text-gold"
+              >
+                <Icon name="lucide:external-link" class="h-3.5 w-3.5" />
+                {step.link.label}
+              </a>
+            )}
+          </li>
+        ))
+      }
+    </ol>
+
+    {/* ------------------------------------------------------------------
+        THE TWO BROWSER WORKSPACES, compared side by side.
+    ------------------------------------------------------------------ */}
+    <div class="mt-14">
+      <Prompt command="which editor" />
+      <h2 class="mt-3 font-mono text-2xl font-semibold">
+        Two ways to work in a browser
+      </h2>
+      <p class="mt-4 text-sm leading-relaxed text-muted">
+        Both run on a school Chromebook. Pick by what you are doing, not by
+        which sounds more impressive.
+      </p>
+
+      <div class="mt-7 grid gap-5 sm:grid-cols-2">
+        <div class="rounded-lg border border-edge bg-surface p-6">
+          <div class="flex items-center gap-3">
+            <Icon name="lucide:pencil" class="h-5 w-5 text-gold" />
+            <h3 class="font-mono text-base font-semibold">github.dev</h3>
+          </div>
+          <p class="mt-3 text-sm leading-relaxed text-muted">
+            Press <code class="rounded bg-ink px-1.5 py-0.5 font-mono text-gold"
+              >.</code
+            > on any repository page. Opens instantly, free forever, no setup.
+          </p>
+          <ul class="mt-4 space-y-1.5 font-mono text-xs text-muted">
+            <li><span class="text-acid">+</span> instant, no waiting</li>
+            <li><span class="text-acid">+</span> perfect for Markdown and text</li>
+            <li>
+              <span class="text-gold">&minus;</span> cannot run the site or use a
+              terminal
+            </li>
+          </ul>
+        </div>
+
+        <div class="rounded-lg border border-edge bg-surface p-6">
+          <div class="flex items-center gap-3">
+            <Icon name="lucide:cloud" class="h-5 w-5 text-gold" />
+            <h3 class="font-mono text-base font-semibold">Codespaces</h3>
+          </div>
+          <p class="mt-3 text-sm leading-relaxed text-muted">
+            A whole computer in a browser tab, with the site running live beside
+            your code. Uses part of your monthly free allowance.
+          </p>
+          <ul class="mt-4 space-y-1.5 font-mono text-xs text-muted">
+            <li><span class="text-acid">+</span> real terminal, runs the site</li>
+            <li><span class="text-acid">+</span> set up for you already</li>
+            <li>
+              <span class="text-gold">&minus;</span> a few minutes to start; stop
+              it when done
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    {/* ------------------------------------------------------------------
+        WHERE TO GO NEXT
+    ------------------------------------------------------------------ */}
+    <div class="mt-14 rounded-lg border border-dashed border-edge p-6">
+      <p class="text-sm leading-relaxed text-muted">
+        <span class="font-mono text-gold">//</span> Stuck on any of this? That is
+        expected, and it is what meetings are for. Bring the thing that is not
+        working &mdash; a screenshot of the error is plenty.
+      </p>
+      <div class="mt-5 flex flex-wrap gap-3">
+        <a
+          href={href('/learn')}
+          class="rounded border border-edge px-4 py-2 font-mono text-xs text-bone transition-colors hover:border-gold hover:text-gold"
+        >
+          Pick a learning track
+        </a>
+        <a
+          href={`${REPO_URL}/blob/main/CONTRIBUTING.md`}
+          class="rounded border border-edge px-4 py-2 font-mono text-xs text-bone transition-colors hover:border-gold hover:text-gold"
+        >
+          Read CONTRIBUTING.md
+        </a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>

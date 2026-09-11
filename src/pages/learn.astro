@@ -1,32 +1,25 @@
 ---
 /**
- * LEARN PAGE
- * ==========
- * The learning tracks, ordered by the `order` number in each Markdown file in
- * src/content/tracks/. Each track can include a short code sample, which gets
- * real syntax colouring through the CodePanel component.
+ * LEARN INDEX
+ * ===========
+ * The list of learning tracks. Each card links to that track's own page, built
+ * from its Markdown file by src/pages/learn/[...slug].astro.
+ *
+ * This page deliberately shows only a summary. The steps, prerequisites and
+ * links live on the track pages, so this one stays scannable.
  */
 
-import { getCollection, render } from 'astro:content';
+import { getCollection } from 'astro:content';
 import { Icon } from 'astro-icon/components';
 
 import BaseLayout from '../layouts/BaseLayout.astro';
 import HexGrid from '../components/HexGrid.astro';
 import Prompt from '../components/Prompt.astro';
-import CodePanel from '../components/CodePanel.astro';
+import { href } from '../lib/href';
 
 // Lowest `order` number first, so the beginner tracks lead.
 const tracks = (await getCollection('tracks')).sort(
   (a, b) => a.data.order - b.data.order,
-);
-
-// Each track's Markdown body has to be rendered into HTML before we can show
-// it. Doing that up front keeps the markup below simple.
-const rendered = await Promise.all(
-  tracks.map(async (track) => ({
-    data: track.data,
-    Content: (await render(track)).Content,
-  })),
 );
 
 // How each difficulty level is coloured.
@@ -55,46 +48,78 @@ const LEVEL_STYLES: Record<string, string> = {
     </div>
   </section>
 
-  <section class="mx-auto max-w-6xl space-y-6 px-5 py-14">
-    {
-      rendered.map(({ data, Content }) => (
-        <article class="rounded-lg border border-edge bg-surface p-6 sm:p-8">
-          <div class="grid gap-8 lg:grid-cols-2">
-            {/* Left: what the track is. */}
-            <div>
-              <div class="flex items-center gap-3">
-                <Icon name={`lucide:${data.icon}`} class="h-5 w-5 text-gold" />
-                <h2 class="font-mono text-xl font-semibold">{data.title}</h2>
-                <span
-                  class:list={[
-                    'rounded-full border px-2.5 py-0.5 font-mono text-xs',
-                    LEVEL_STYLES[data.level] ?? 'border-edge text-muted',
-                  ]}
-                >
-                  {data.level}
-                </span>
-              </div>
+  {/* ------------------------------------------------------------------
+      NEW HERE? — the setup everything else depends on.
+  ------------------------------------------------------------------ */}
+  <section class="mx-auto max-w-6xl px-5 pt-12">
+    <a
+      href={href('/start')}
+      class="group flex flex-wrap items-center gap-4 rounded-lg border border-gold/40 bg-gold/5 p-6 transition-colors hover:border-gold"
+    >
+      <Icon name="lucide:rocket" class="h-6 w-6 shrink-0 text-gold" />
+      <div class="flex-1">
+        <h2 class="font-mono text-lg font-semibold text-bone">
+          Never used GitHub? Start here first
+        </h2>
+        <p class="mt-1.5 text-sm leading-relaxed text-muted">
+          Making an account, getting the free student tools, joining our
+          organization, and landing your first real change. Every track below
+          assumes you have done this.
+        </p>
+      </div>
+      <Icon
+        name="lucide:arrow-right"
+        class="h-5 w-5 shrink-0 text-gold transition-transform group-hover:translate-x-1"
+      />
+    </a>
+  </section>
 
-              <p class="mt-4 text-sm leading-relaxed text-bone">{data.summary}</p>
-
-              {/* The Markdown body of the track file goes here. */}
-              <div class="md-content mt-4 space-y-3 text-sm leading-relaxed text-muted">
-                <Content />
-              </div>
+  {/* ------------------------------------------------------------------
+      THE TRACKS
+  ------------------------------------------------------------------ */}
+  <section class="mx-auto max-w-6xl px-5 py-12">
+    <div class="grid gap-5 sm:grid-cols-2">
+      {
+        tracks.map((track) => (
+          <a
+            href={href(`/learn/${track.id}`)}
+            class="group flex h-full flex-col rounded-lg border border-edge bg-surface p-6 transition-colors hover:border-gold/40"
+          >
+            <div class="flex flex-wrap items-center gap-3">
+              <Icon name={`lucide:${track.data.icon}`} class="h-5 w-5 text-gold" />
+              <h2 class="font-mono text-xl font-semibold text-bone">
+                {track.data.title}
+              </h2>
+              <span
+                class:list={[
+                  'rounded-full border px-2.5 py-0.5 font-mono text-xs',
+                  LEVEL_STYLES[track.data.level] ?? 'border-edge text-muted',
+                ]}
+              >
+                {track.data.level}
+              </span>
             </div>
 
-            {/* Right: the code sample, if the track file included one. */}
-            {data.snippet && (
-              <CodePanel
-                code={data.snippet}
-                lang={data.snippetLang}
-                filename={`${data.title.toLowerCase().split(' ')[0]}-example`}
-                class="self-start"
-              />
-            )}
-          </div>
-        </article>
-      ))
-    }
+            <p class="mt-4 flex-1 text-sm leading-relaxed text-muted">
+              {track.data.summary}
+            </p>
+
+            <div class="mt-5 flex items-center justify-between border-t border-edge pt-4">
+              <span class="font-mono text-xs text-muted">
+                <Icon name="lucide:clock" class="mr-1 inline h-3.5 w-3.5" />
+                {track.data.time}
+              </span>
+              <span class="flex items-center gap-1.5 font-mono text-xs text-cyan transition-colors group-hover:text-gold">
+                open track
+                <Icon
+                  name="lucide:arrow-right"
+                  class="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5"
+                />
+              </span>
+            </div>
+          </a>
+        ))
+      }
+    </div>
   </section>
 </BaseLayout>

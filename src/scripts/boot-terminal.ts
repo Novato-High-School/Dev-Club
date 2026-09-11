@@ -77,17 +77,201 @@ const COMMANDS: Record<string, { blurb: string; lines: [string, LineStyle][] }> 
   },
 };
 
-/** Extra commands that work but are left out of `help`, as a small reward. */
-const EASTER_EGGS: Record<string, [string, LineStyle][]> = {
-  ls: [
-    ['about  projects  learn  join  README.md', 'normal'],
-    ['', 'normal'],
-    ['(nice, you have used a terminal before)', 'dim'],
-  ],
-  whoami: [['guest — but not for long', 'cyan']],
-  sudo: [['Nice try.', 'gold']],
-  exit: [['You can just click Skip, you know.', 'dim']],
+/**
+ * THE HIDDEN COMMANDS
+ * ===================
+ * None of these appear in `help`. They are here to be found.
+ *
+ * Each one has a `hint`, which is what `cat .secrets` shows for the ones you
+ * have not discovered yet — so there is a trail to follow rather than a list of
+ * things you would have to guess blindly.
+ *
+ * Adding one is three lines: a name, some output, and a hint. Please do add
+ * your own; that is rather the point.
+ */
+interface Egg {
+  /** What gets printed. */
+  lines: [string, LineStyle][];
+  /** Cryptic clue shown in `.secrets` before it has been found. */
+  hint: string;
+  /** Set for eggs that run an effect instead of just printing. */
+  effect?: 'matrix' | 'theme' | 'hornet';
+}
+
+const EASTER_EGGS: Record<string, Egg> = {
+  ls: {
+    hint: 'What would you type to see what is here?',
+    lines: [
+      ['about  projects  learn  join  README.md', 'normal'],
+      ['', 'normal'],
+      ['(some files are shy. -a is the flag that coaxes them out.)', 'dim'],
+    ],
+  },
+
+  'ls -a': {
+    hint: 'Files whose names start with a dot like to hide.',
+    lines: [
+      ['.  ..  .secrets  .config  README.md', 'normal'],
+      ['about  projects  learn  join', 'normal'],
+      ['', 'normal'],
+      ['Try: cat .secrets', 'gold'],
+    ],
+  },
+
+  '.config': {
+    hint: 'There is more than one dotfile.',
+    lines: [
+      ['# dev-club/.config', 'dim'],
+      ['curiosity   = maximum', 'normal'],
+      ['gatekeeping = false', 'normal'],
+      ['snacks      = occasionally', 'normal'],
+      ['hornets     = stylised only', 'normal'],
+    ],
+  },
+
+  whoami: {
+    hint: 'Who are you, anyway?',
+    lines: [['guest — but not for long', 'cyan']],
+  },
+
+  sudo: {
+    hint: 'Try demanding something.',
+    lines: [
+      ['Nice try.', 'gold'],
+      ['', 'normal'],
+      ['You already have all the permissions you need here.', 'dim'],
+    ],
+  },
+
+  hornet: {
+    hint: 'We are the Hornets. Say so.',
+    effect: 'hornet',
+    lines: [],
+  },
+
+  matrix: {
+    hint: 'A film about a green rain of characters.',
+    effect: 'matrix',
+    lines: [],
+  },
+
+  theme: {
+    hint: 'Not a fan of gold?',
+    effect: 'theme',
+    lines: [],
+  },
+
+  coffee: {
+    hint: 'What does every programmer allegedly run on?',
+    lines: [
+      ['418 I\'M A TEAPOT', 'gold'],
+      ['', 'normal'],
+      ['This is a real HTTP status code. Somebody put it in the actual', 'dim'],
+      ['specification as a joke in 1998 and it never left.', 'dim'],
+    ],
+  },
+
+  sl: {
+    hint: 'What happens when you type ls too fast?',
+    lines: [
+      ['      ====        ________                ___________', 'gold'],
+      ['  _D _|  |_______/        \\__I_I_____===__|_________|', 'gold'],
+      ['   |(_)---  |   H\\________/ |   |        =|___ ___|', 'gold'],
+      ['   /     |  |   H  |  |     |   |         ||_| |_||', 'gold'],
+      ['  |      |  |   H  |__--------------------| [___] |', 'gold'],
+      ['', 'normal'],
+      ['(a real command that exists purely to punish typos)', 'dim'],
+    ],
+  },
+
+  vim: {
+    hint: 'Open an editor people joke about escaping.',
+    lines: [
+      ['You are now trapped in vim.', 'gold'],
+      ['', 'normal'],
+      ['Press Escape, then type  :q!  and hit Enter.', 'normal'],
+      ['', 'normal'],
+      ['(you are not actually trapped. but one day you will be.)', 'dim'],
+    ],
+  },
+
+  '42': {
+    hint: 'The answer to life, the universe, and everything.',
+    lines: [
+      ['Correct.', 'success'],
+      ['', 'normal'],
+      ['Now what was the question?', 'dim'],
+    ],
+  },
+
+  fortune: {
+    hint: 'Ask for your fortune.',
+    lines: [],
+  },
+
+  credits: {
+    hint: 'Who made this?',
+    lines: [
+      ['This site was built by Dev Club members.', 'normal'],
+      ['', 'normal'],
+      ['Every project, recap and track on it was written by a student', 'dim'],
+      ['and merged through a pull request, the same as real software.', 'dim'],
+      ['', 'normal'],
+      ['Your name could be in the commit log by Thursday.', 'gold'],
+    ],
+  },
+
+  konami: {
+    hint: 'A very old cheat code. Arrow keys, then two letters.',
+    lines: [
+      ['↑ ↑ ↓ ↓ ← → ← → B A', 'gold'],
+      ['', 'normal'],
+      ['30 LIVES GRANTED', 'success'],
+      ['', 'normal'],
+      ['You will need roughly four of them to learn Git.', 'dim'],
+    ],
+  },
+
+  exit: {
+    hint: 'Try to leave.',
+    lines: [['You can just click Skip, you know.', 'dim']],
+  },
 };
+
+/** Rotating fortunes, for the `fortune` command. */
+const FORTUNES: string[] = [
+  'It works on my machine.',
+  'There are two hard problems in computer science: naming things, cache invalidation, and off-by-one errors.',
+  'The code you write at 2am will be read by someone at 9am. Often you.',
+  'Weeks of coding can save you hours of planning.',
+  'Deleted code has no bugs.',
+  'Every program has at least one more bug. This is known as the law.',
+  'Asking for help early is a senior developer skill.',
+  'The best time to write a comment was when you wrote the line. The second best time is now.',
+];
+
+/** The club mascot, as close as we get to one. Hexagons, not clip art. */
+const HORNET_ART: [string, LineStyle][] = [
+  ['        __     __        ', 'gold'],
+  ['       /  \\   /  \\       ', 'gold'],
+  ['      |    |_|    |      ', 'gold'],
+  ['       \\__/   \\__/       ', 'gold'],
+  ['        __     __        ', 'gold'],
+  ['       /  \\   /  \\       ', 'gold'],
+  ['      |    |_|    |      ', 'gold'],
+  ['       \\__/   \\__/       ', 'gold'],
+  ['', 'normal'],
+  ['        NOVATO HORNETS', 'normal'],
+  ['   stylised, never clip art', 'dim'],
+];
+
+/** Accent colours the `theme` command cycles through. */
+const THEMES: { name: string; value: string }[] = [
+  { name: 'hornet gold', value: '#ffc400' },
+  { name: 'acid green', value: '#a3e635' },
+  { name: 'cyan', value: '#22d3ee' },
+  { name: 'magenta', value: '#f472b6' },
+];
 
 /** Answers accepted for the `while (curious) { ______(); }` challenge. */
 const ACCEPTED_ANSWERS = ['learn', 'build', 'create', 'experiment', 'code', 'explore'];
@@ -203,6 +387,10 @@ export function startBootTerminal(options: BootOptions): void {
       print(`  ${name.padEnd(10)}${command.blurb}`);
     }
     print('');
+    // The nudge towards the hidden half. Deliberately vague.
+    print(`There are ${totalEggs} commands that are not on this list.`, 'dim');
+    print('Somebody left a map lying around. Try: ls -a', 'dim');
+    print('');
   }
 
   /** Sets up the fill-in-the-blank challenge. */
@@ -276,7 +464,9 @@ export function startBootTerminal(options: BootOptions): void {
       return;
     }
 
-    const name = text.toLowerCase();
+    // Lower-case it and squeeze runs of spaces, so "ls   -A" still matches
+    // "ls -a". Small thing; saves a lot of "why didn't that work".
+    const name = text.toLowerCase().replace(/\s+/g, ' ');
 
     if (name === 'help') return printHelp();
 
@@ -297,9 +487,47 @@ export function startBootTerminal(options: BootOptions): void {
       return;
     }
 
-    if (EASTER_EGGS[name]) {
+    // `cat .secrets` is the map: it shows what has been found and leaves a
+    // clue for everything that has not.
+    if (name === 'cat .secrets' || name === '.secrets' || name === 'secrets') {
+      await printSecrets();
+      return;
+    }
+
+    // `cat something` falls through to an egg of that name, so `cat .config`
+    // works the way somebody used to a terminal would expect.
+    const catTarget = name.startsWith('cat ') ? name.slice(4).trim() : null;
+    const eggName = catTarget && EASTER_EGGS[catTarget] ? catTarget : name;
+
+    if (EASTER_EGGS[eggName]) {
       print('');
-      await printSequence(EASTER_EGGS[name], reducedMotion ? 0 : 60);
+      const egg = EASTER_EGGS[eggName];
+
+      // Some eggs do something rather than say something.
+      if (egg.effect === 'matrix') await runMatrix();
+      else if (egg.effect === 'theme') nextTheme();
+      else if (egg.effect === 'hornet') await printSequence(HORNET_ART, reducedMotion ? 0 : 45);
+      else if (eggName === 'fortune') {
+        print(FORTUNES[Math.floor(Math.random() * FORTUNES.length)], 'cyan');
+      } else {
+        await printSequence(egg.lines, reducedMotion ? 0 : 60);
+      }
+
+      recordEgg(eggName);
+      print('');
+      return;
+    }
+
+    // A couple of small commands that behave like the real thing.
+    if (name === 'pwd') {
+      print('');
+      print('/var/www/dev-club', 'normal');
+      print('');
+      return;
+    }
+    if (name.startsWith('echo ')) {
+      print('');
+      print(text.slice(5));
       print('');
       return;
     }
@@ -309,6 +537,83 @@ export function startBootTerminal(options: BootOptions): void {
     print(`I don't know "${text}" yet.`, 'error');
     print('Type help to see what does work.', 'dim');
     print('');
+  }
+
+  // ---------------------------------------------------------------------
+  // Easter eggs
+  // ---------------------------------------------------------------------
+
+  /** Every hidden command this browser has found so far. */
+  const foundEggs = loadFoundEggs();
+  const totalEggs = Object.keys(EASTER_EGGS).length;
+
+  /** Notes that an egg has been found, and says so the first time. */
+  function recordEgg(eggName: string): void {
+    if (foundEggs.has(eggName)) return;
+    foundEggs.add(eggName);
+    saveFoundEggs(foundEggs);
+    print('');
+    print(`[ found ${foundEggs.size} of ${totalEggs} hidden commands ]`, 'success');
+  }
+
+  /**
+   * The treasure map. Shows what has been found, and a clue for what has not,
+   * so hunting is a trail rather than a guessing game.
+   */
+  async function printSecrets(): Promise<void> {
+    print('');
+    print('# .secrets', 'dim');
+    print('');
+    print(`You have found ${foundEggs.size} of ${totalEggs} hidden commands.`, 'gold');
+    print('');
+
+    for (const [eggName, egg] of Object.entries(EASTER_EGGS)) {
+      if (foundEggs.has(eggName)) {
+        print(`  [x] ${eggName}`, 'success');
+      } else {
+        print(`  [ ] ??? — ${egg.hint}`, 'dim');
+      }
+    }
+
+    print('');
+    if (foundEggs.size === totalEggs) {
+      print('All of them. Genuinely well done.', 'success');
+      print('Now go add one of your own — src/scripts/boot-terminal.ts', 'gold');
+    } else {
+      print('Keep typing things. That is the whole game.', 'dim');
+    }
+    print('');
+  }
+
+  /** A short burst of falling characters, because of course. */
+  async function runMatrix(): Promise<void> {
+    const CHARS = 'アイウエオカキクケコ01{}[]<>/\\|=+*';
+    const rows = reducedMotion ? 3 : 12;
+
+    for (let i = 0; i < rows; i++) {
+      let line = '';
+      for (let j = 0; j < 46; j++) {
+        // Leave gaps so it reads as rain rather than a solid block.
+        line += Math.random() > 0.35 ? CHARS[Math.floor(Math.random() * CHARS.length)] : ' ';
+      }
+      print(line, 'success');
+      if (!reducedMotion) await wait(70);
+    }
+    print('');
+    print('Wake up, Hornet.', 'gold');
+  }
+
+  /** Cycles the site accent colour. Lives until the page is reloaded. */
+  let themeIndex = 0;
+  function nextTheme(): void {
+    themeIndex = (themeIndex + 1) % THEMES.length;
+    const theme = THEMES[themeIndex];
+    // Every gold thing on the site reads this one variable, so setting it here
+    // re-skins the whole page at once.
+    document.documentElement.style.setProperty('--color-gold', theme.value);
+    print(`accent colour → ${theme.name}`, 'gold');
+    print('');
+    print('(reload the page to put it back)', 'dim');
   }
 
   // ---------------------------------------------------------------------
@@ -374,6 +679,33 @@ export function startBootTerminal(options: BootOptions): void {
   // Wiring it all up
   // ---------------------------------------------------------------------
 
+  /**
+   * The Konami code: up up down down left right left right B A.
+   * We watch the last ten keys pressed and compare. Typing `konami` works too,
+   * for anyone who reads the hint rather than remembering 1986.
+   */
+  const KONAMI = [
+    'arrowup', 'arrowup', 'arrowdown', 'arrowdown',
+    'arrowleft', 'arrowright', 'arrowleft', 'arrowright', 'b', 'a',
+  ];
+  let konamiProgress: string[] = [];
+
+  root.addEventListener('keydown', (event) => {
+    konamiProgress.push(event.key.toLowerCase());
+    if (konamiProgress.length > KONAMI.length) konamiProgress.shift();
+
+    if (konamiProgress.join(',') === KONAMI.join(',')) {
+      konamiProgress = [];
+      input.value = '';
+      void (async () => {
+        print('');
+        await printSequence(EASTER_EGGS.konami.lines, reducedMotion ? 0 : 90);
+        recordEgg('konami');
+        print('');
+      })();
+    }
+  });
+
   form.addEventListener('submit', (event) => {
     event.preventDefault();
     const value = input.value;
@@ -411,6 +743,8 @@ export function startBootTerminal(options: BootOptions): void {
         ['', 'normal'],
         ['Type help to begin.', 'normal'],
         ['', 'normal'],
+        ['Not everything is in help.', 'dim'],
+        ['', 'normal'],
       ],
       reducedMotion ? 0 : 220,
     );
@@ -430,6 +764,32 @@ function revealSite(): void {
   document.documentElement.removeAttribute('data-booting');
   for (const child of Array.from(document.body.children)) {
     if (child.id !== 'boot-root') child.removeAttribute('aria-hidden');
+  }
+}
+
+/**
+ * WHICH EASTER EGGS HAS THIS PERSON FOUND?
+ * Kept in the browser so the count survives reloads. It is only ever a list of
+ * command names — nothing about who the visitor is.
+ */
+const EGG_STORAGE_KEY = 'devclub.eggs.v1';
+
+function loadFoundEggs(): Set<string> {
+  try {
+    const raw = localStorage.getItem(EGG_STORAGE_KEY);
+    return new Set(raw ? (JSON.parse(raw) as string[]) : []);
+  } catch {
+    // Storage blocked (private browsing). The eggs still work, they just will
+    // not be remembered, which is a perfectly fine way to fail.
+    return new Set();
+  }
+}
+
+function saveFoundEggs(found: Set<string>): void {
+  try {
+    localStorage.setItem(EGG_STORAGE_KEY, JSON.stringify([...found]));
+  } catch {
+    // Nothing to do.
   }
 }
 
