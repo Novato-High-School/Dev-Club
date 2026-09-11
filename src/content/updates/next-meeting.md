@@ -2,7 +2,6 @@
 title: Weekly meeting — everyone welcome
 date: 2026-09-17
 kind: meeting
-where: TBD
 ---
 
 Come find out what the club is working on. No experience needed and nothing to
