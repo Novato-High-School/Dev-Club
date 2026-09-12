@@ -1,0 +1,18 @@
+# CODE OWNERS
+# ===========
+# Whoever is listed here is automatically asked to review any pull request that
+# touches the matching files. It is how the advisor gets a look at every change
+# without anyone having to remember to request it.
+#
+# Add student leads here as they earn it — being a reviewer is a real
+# responsibility and a good thing to have been trusted with.
+
+# Everything, by default.
+*                       @bjknudson
+
+# The files where a mistake is expensive: privacy rules, deployment, and the
+# settings that decide how the whole site behaves.
+/.github/               @bjknudson
+/src/config/site.ts     @bjknudson
+/src/content.config.ts  @bjknudson
+/CONTRIBUTING.md        @bjknudson

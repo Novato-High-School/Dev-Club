@@ -57,7 +57,52 @@ and Codespaces all work on school devices today.
 
 ---
 
-## 2. Loose ends in the code
+## 2. Lock down the workflow
+
+Decided: every change goes through a pull request with one approval. Students
+get real branch-and-review practice, and nothing reaches a public school site
+without a second person reading it.
+
+**Built already:** `.github/CODEOWNERS` auto-requests the advisor on every PR,
+`.github/pull_request_template.md` puts the privacy rule in front of the person
+opening it, and `.github/workflows/check.yml` builds the site on every PR.
+
+**Left to do in GitHub's settings** — these cannot be done from the codebase:
+
+- [ ] **Make the repo public.** Push restrictions on a Free organization only
+      work on public repos. Public also makes Actions minutes free and lets
+      students fork. There are no secrets in the repo and the site content is
+      already public.
+      **Before flipping it:** see the commit-email note below.
+- [ ] **Add a ruleset on `main`** (Settings → Rules → Rulesets → New branch
+      ruleset, target `main`):
+  - Require a pull request before merging, **1 approval**
+  - Require status checks to pass → **Check the site builds**
+  - Block force pushes
+  - Restrict deletions
+  - Dismiss stale approvals when new commits are pushed
+- [ ] **Decide what "1 approval" means in practice.** If the advisor is the only
+      reviewer it becomes a bottleneck at lunchtime. Promoting two senior
+      members to reviewers fixes it and is a genuine responsibility to hand
+      somebody.
+
+### Commit emails become public
+
+Every commit so far records `bjknudson@gmail.com` as the author, and making the
+repo public makes that permanently visible and harvestable by bots. Options:
+
+- **Going forward:** set the GitHub noreply address
+  (`git config user.email "63278475+bjknudson@users.noreply.github.com"`) and
+  turn on *Settings → Emails → Block command line pushes that expose my email*.
+- **For the existing commits:** they keep the real address unless the history is
+  rewritten. Doable while the repo is small and barely cloned, but it changes
+  every commit ID.
+
+Worth settling before the repo goes public, not after.
+
+---
+
+## 3. Loose ends in the code
 
 Small, known gaps left from the first build. Each is a good first task for a
 member who wants to touch real code rather than Markdown.
@@ -82,7 +127,7 @@ fix what it finds.
 
 ---
 
-## 3. Now that tracks lead somewhere
+## 4. Now that tracks lead somewhere
 
 Built: every track has its own page at `/learn/<name>` with prerequisites,
 outcomes, real steps and curated free resources; a `/start` page covers the
@@ -102,7 +147,7 @@ What that opens up:
 
 ---
 
-## 4. Fill it with real content
+## 5. Fill it with real content
 
 The site is a shell until this happens, and this is the part members can do
 without any code.
@@ -115,7 +160,7 @@ without any code.
 
 ---
 
-## 5. Ideas from the original brief, not yet built
+## 6. Ideas from the original brief, not yet built
 
 Kept because they are still good, ordered roughly by value per effort.
 
@@ -138,7 +183,7 @@ watch the page weight, and give it a static fallback.
 
 ---
 
-## 6. Ongoing
+## 7. Ongoing
 
 - Keep `CONTRIBUTING.md` true. If a step changes, fix it the same day —
   instructions that lie are worse than none.
