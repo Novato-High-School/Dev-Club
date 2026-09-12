@@ -2,19 +2,77 @@
 /**
  * HEX GRID BACKGROUND
  * ===================
- * The faint honeycomb pattern behind the top of each page. It is our hornet
- * reference, done with geometry instead of a cartoon mascot.
+ * The faint honeycomb behind the top of each page. It is our hornet reference,
+ * done with geometry instead of a cartoon mascot.
  *
- * The whole thing is one SVG pattern drawn by the browser, so it costs no
- * image downloads and stays sharp on any screen.
+ * It is one SVG pattern drawn by the browser, so it costs no image downloads
+ * and stays sharp on any screen.
+ *
+ * THE GEOMETRY, because hexagons are less obvious than they look
+ * --------------------------------------------------------------
+ * These are "pointy-top" hexagons. For one with side length s:
+ *
+ *   - it is  2s      tall, point to point
+ *   - it is  s * √3  wide, flat to flat
+ *
+ * The part people get wrong: rows of a honeycomb are NOT stacked 2s apart.
+ * They interlock, so each row sits only **1.5s** below the one above, and every
+ * other row is nudged sideways by half a hexagon. Stack them 2s apart with no
+ * sideways nudge and you get columns of hexagons, not a honeycomb.
+ *
+ * So the repeating tile is one hexagon wide and 3s tall — exactly two rows —
+ * and we draw five hexagons in it: one in the middle, and four half ones split
+ * across the top and bottom edges so the seams line up when it repeats.
  */
 
 interface Props {
   /** Extra Tailwind classes, usually to position or fade the grid. */
   class?: string;
+  /** Side length of one hexagon, in pixels. Bigger = a more open honeycomb. */
+  size?: number;
+  /** Thickness of the lines. */
+  strokeWidth?: number;
 }
 
-const { class: className = '' } = Astro.props;
+const { class: className = '', size = 26, strokeWidth = 1 } = Astro.props;
+
+// Width of one hexagon, flat side to flat side.
+const hexWidth = size * Math.sqrt(3);
+// How far down the next row of the honeycomb sits.
+const rowPitch = size * 1.5;
+// The repeating tile is two rows tall.
+const tileHeight = rowPitch * 2;
+
+/** Builds the outline of one pointy-top hexagon centred on (cx, cy). */
+function hexPath(cx: number, cy: number): string {
+  const halfWidth = hexWidth / 2;
+  const round = (n: number) => Number(n.toFixed(2));
+
+  return [
+    `M${round(cx)} ${round(cy - size)}`, // top point
+    `L${round(cx + halfWidth)} ${round(cy - size / 2)}`, // upper right
+    `L${round(cx + halfWidth)} ${round(cy + size / 2)}`, // lower right
+    `L${round(cx)} ${round(cy + size)}`, // bottom point
+    `L${round(cx - halfWidth)} ${round(cy + size / 2)}`, // lower left
+    `L${round(cx - halfWidth)} ${round(cy - size / 2)}`, // upper left
+    'Z',
+  ].join(' ');
+}
+
+/**
+ * The five hexagons that make one tile.
+ *
+ * A pattern tile clips anything hanging outside it, so the hexagons sitting on
+ * the top and bottom edges each show only the half that fits — and those two
+ * halves add up to a whole hexagon once the tile repeats.
+ */
+const hexagons = [
+  hexPath(0, 0), // top-left, half
+  hexPath(hexWidth, 0), // top-right, half
+  hexPath(hexWidth / 2, rowPitch), // the whole one in the middle
+  hexPath(0, tileHeight), // bottom-left, half
+  hexPath(hexWidth, tileHeight), // bottom-right, half
+];
 ---
 
 <div
@@ -23,21 +81,24 @@ const { class: className = '' } = Astro.props;
 >
   <svg class="h-full w-full" xmlns="http://www.w3.org/2000/svg">
     <defs>
-      <!-- One hexagon, repeated across the whole area by the browser. -->
       <pattern
         id="hexes"
-        width="56"
-        height="48"
+        width={hexWidth}
+        height={tileHeight}
         patternUnits="userSpaceOnUse"
-        patternTransform="scale(1)"
       >
-        <path
-          d="M28 0 L56 16 L56 40 L28 56 L0 40 L0 16 Z"
-          fill="none"
-          stroke="currentColor"
-          stroke-width="1"
-        ></path>
+        {
+          hexagons.map((d) => (
+            <path
+              d={d}
+              fill="none"
+              stroke="currentColor"
+              stroke-width={strokeWidth}
+            />
+          ))
+        }
       </pattern>
+
       <!-- Fades the grid out towards the bottom so it never fights with text. -->
       <linearGradient id="hexFade" x1="0" y1="0" x2="0" y2="1">
         <stop offset="0%" stop-color="white" stop-opacity="0.5"></stop>
@@ -47,6 +108,7 @@ const { class: className = '' } = Astro.props;
         <rect width="100%" height="100%" fill="url(#hexFade)"></rect>
       </mask>
     </defs>
+
     <rect
       width="100%"
       height="100%"
