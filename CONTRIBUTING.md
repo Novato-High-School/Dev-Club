@@ -23,6 +23,36 @@ pull request. That is always the right call.
 
 ---
 
+## How changes reach the live site
+
+Every change goes through a pull request. **Nobody pushes straight to `main`,
+including the advisor** — GitHub is set up to refuse it. That is on purpose, and
+it is how professional teams work.
+
+The path a change takes:
+
+1. **You make a branch.** A separate copy where your work lives. If you edit in
+   the GitHub website it offers to make one for you; take the offer.
+2. **You open a pull request.** You describing your change and asking for it to
+   be included.
+3. **A check runs automatically.** It builds the whole site to confirm your
+   change did not break it. Roughly a minute. A red X here is information, not
+   a telling-off.
+4. **Somebody reviews it.** One other person reads it and either approves or
+   asks a question. This is the step that catches a phone number nobody meant
+   to publish.
+5. **It gets merged, and it is live** about a minute later.
+
+Two things worth saying plainly:
+
+- **You cannot break the live site.** If a change does not build, the deploy
+  stops and the site keeps serving the last working version.
+- **Review is not judgement.** Everybody's work gets reviewed, every time.
+  Having a change questioned is the normal state of affairs, not a sign you did
+  badly.
+
+---
+
 ## Add a project to the Build page
 
 1. Go to the [`src/content/projects/`](src/content/projects/) folder on GitHub.
