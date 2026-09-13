@@ -16,6 +16,7 @@ import Prompt from '../components/Prompt.astro';
 import RepoCard from '../components/RepoCard.astro';
 import { href } from '../lib/href';
 import { CLUB, BOOT_MODE, SITE_DESCRIPTION } from '../config/site';
+import { meetingTime } from '../lib/schedule';
 
 // Find the next meeting: the soonest meeting that has not happened yet.
 const updates = await getCollection('updates');
@@ -140,7 +141,7 @@ const dateFormat = new Intl.DateTimeFormat('en-US', {
             <div>
               <dt class="text-muted">time</dt>
               <dd class="mt-1 text-gold">
-                {CLUB.meetingDay}, {CLUB.meetingTime}
+                {meetingTime(nextMeeting.data.date)}
               </dd>
             </div>
             <div>

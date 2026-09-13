@@ -68,7 +68,6 @@ export const SITE_DESCRIPTION =
  */
 export const CLUB = {
   meetingDay: 'Mondays',
-  meetingTime: 'Lunch',
   meetingRoom: '3202',
   advisorName: 'Mr. Knudson',
 
@@ -89,3 +88,43 @@ export const CLUB = {
    */
   interestFormUrl: '',
 } as const;
+
+/**
+ * THE BELL SCHEDULE
+ * =================
+ * Lunch is not at the same time every day. Novato High runs block days on
+ * Tuesday and Wednesday, and lunch on those days is earlier and shorter.
+ *
+ * We keep real clock times rather than just the word "Lunch" for two reasons:
+ * a calendar feed needs actual times to be useful, and "Lunch" means nothing
+ * to a parent reading the site.
+ *
+ * Times are 24-hour, as "HH:MM", in local school time.
+ */
+
+/** Days of the week that run the block schedule. 0 = Sunday, 1 = Monday, ... */
+export const BLOCK_DAYS = [2, 3] as const; // Tuesday, Wednesday
+
+export interface Period {
+  /** What to call it on the page. */
+  label: string;
+  /** 24-hour start time, e.g. '11:40'. Empty means "we have not filled it in". */
+  start: string;
+  /** 24-hour end time, e.g. '12:10'. */
+  end: string;
+}
+
+export const PERIODS: { regular: Period; block: Period } = {
+  /**
+   * Lunch on a normal (non-block) day — which is when the club currently
+   * meets, since we meet on Mondays.
+   *
+   * TODO: fill in the real start and end times. While these are empty the site
+   * simply shows the word "Lunch" and no clock times, which is vague but
+   * honest. Do not guess: a wrong time sends somebody to an empty room.
+   */
+  regular: { label: 'Lunch', start: '', end: '' },
+
+  /** Lunch on a block day (Tuesday and Wednesday). */
+  block: { label: 'Lunch', start: '11:40', end: '12:10' },
+};

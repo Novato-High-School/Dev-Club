@@ -28,26 +28,17 @@ remark/rehype with its own Markdown processor, Sätteri.
 
 ## 1. Launch checklist
 
-### Blocker: github.io is filtered on school devices
+### Resolved: the site is reachable at school
 
-The site is live and correct, but school devices cannot reach it — the district
-web filter intercepts `novato-high-school.github.io` and serves a block page.
-This is not a fault in the site; the same build loads fine off the school
-network. It does mean students cannot see the club website at school, which is
-most of the point of having one.
+`novato-high-school.github.io` has been allowlisted by the district, so the
+site works on school devices. Contributing, github.dev and Codespaces already
+worked, so the whole workflow is now usable in a meeting.
 
-**In progress:** a school domain has been requested. Once DNS points at GitHub
-Pages, the switch on our side is two lines — `BASE = '/'` and `SITE_URL` in
-`src/config/site.ts` — plus a `public/CNAME` file. Every link already goes
-through the `href()` helper, so nothing else changes.
-
-- [ ] Point DNS at GitHub Pages, then make the two-line switch
-- [ ] Worth doing while waiting: ask IT to allowlist the single hostname
-      `novato-high-school.github.io`. Filters usually block all of `*.github.io`
-      at once, so asking for one hostname is a much smaller request.
-
-Good news: `github.com` itself is **not** blocked, so contributing, github.dev
-and Codespaces all work on school devices today.
+The custom domain is no longer a blocker — still worth having for a name people
+can say out loud and for looking official to parents, but it can happen
+whenever. When DNS is ready it is two lines: `BASE = '/'` and `SITE_URL` in
+`src/config/site.ts`, plus a `public/CNAME` file. Every link already goes
+through the `href()` helper.
 
 ### Still to fill in
 
