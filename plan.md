@@ -118,7 +118,50 @@ fix what it finds.
 
 ---
 
-## 4. Now that tracks lead somewhere
+## 4. Meetings — built
+
+The next meeting is now worked out rather than typed in. What exists:
+
+- **A schedule, not a file.** Mondays at lunch in 3202, from `MEETING_DAYS` and
+  `PERIODS` in `src/config/site.ts`. An ordinary week needs no file at all.
+- **Real bell times.** 12:25–12:55 normally, 11:40–12:10 on block days
+  (Tuesday/Wednesday), picked from the date of the meeting itself.
+- **Closures from three sources**, combined, positive signals only: computed
+  federal holidays plus Thanksgiving week (`src/lib/holidays.ts`), the school's
+  own ICS feed for the long breaks (`src/lib/school-calendar.ts`), and
+  `SKIP_DATES` for surprises. Never inferred from an empty calendar — the feed
+  has ordinary school weeks with nothing in them.
+- **Meeting files named by date**, holding an agenda beforehand and notes
+  afterwards. No `date:` field, so the filename cannot contradict itself.
+- **Speakers live on meetings.** A visit is a meeting; `/connect` is a view of
+  the meetings that had one. The separate `speakers` collection is gone.
+- **`/meetings` archive** listing everything, with un-written-up meetings shown
+  quietly and an "add notes" link into GitHub's editor.
+- **A published calendar feed** at `/meetings.ics` — a plain file, so no account
+  and no app permission, and it handles daylight saving correctly.
+- **A daily rebuild** at 07:17 UTC, which is what makes any of this automatic on
+  a static site.
+
+Still to do here:
+
+- [ ] **Watch the first few weeks.** The holiday rules are only as good as the
+      assumptions behind them. Thanksgiving-week-off is district policy, not
+      law, and worth re-checking each August.
+- [ ] **A write-up nudge.** A workflow that opens an issue the morning after a
+      meeting with no notes, linking straight to the edit page. Turns the
+      write-up into a claimable task.
+- [ ] **`npm run plan-term`** to generate stub files for a term's Mondays.
+
+### On Remind
+
+Decided against integrating. Remind's developer webhook is a *composer*
+integration — it needs a server we do not have, still requires a person to write
+the message, and needs partner approval. The site instead gives every meeting a
+permanent URL and a copy-ready announcement, so posting to Remind is one paste.
+
+---
+
+## 5. Now that tracks lead somewhere
 
 Built: every track has its own page at `/learn/<name>` with prerequisites,
 outcomes, real steps and curated free resources; a `/start` page covers the
@@ -138,7 +181,7 @@ What that opens up:
 
 ---
 
-## 5. Fill it with real content
+## 6. Fill it with real content
 
 The site is a shell until this happens, and this is the part members can do
 without any code.
@@ -151,7 +194,7 @@ without any code.
 
 ---
 
-## 6. Ideas from the original brief, not yet built
+## 7. Ideas from the original brief, not yet built
 
 Kept because they are still good, ordered roughly by value per effort.
 
@@ -174,7 +217,7 @@ watch the page weight, and give it a static fallback.
 
 ---
 
-## 7. Ongoing
+## 8. Ongoing
 
 - Keep `CONTRIBUTING.md` true. If a step changes, fix it the same day —
   instructions that lie are worse than none.

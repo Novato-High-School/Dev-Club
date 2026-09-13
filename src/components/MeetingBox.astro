@@ -1,0 +1,122 @@
+---
+/**
+ * NEXT MEETING BOX
+ * ================
+ * The "here is when we next meet" panel on the home page. Everything in it is
+ * worked out from the schedule, so it stays right without anybody editing it
+ * each week.
+ */
+
+import { Icon } from 'astro-icon/components';
+
+import Prompt from './Prompt.astro';
+import { href } from '../lib/href';
+import type { Meeting } from '../lib/meetings';
+
+interface Props {
+  meeting: Meeting;
+  /** Meetings after this one, for the "also coming up" line. */
+  upcoming?: Meeting[];
+}
+
+const { meeting, upcoming = [] } = Astro.props;
+
+const dateFormat = new Intl.DateTimeFormat('en-US', {
+  weekday: 'long',
+  month: 'long',
+  day: 'numeric',
+  timeZone: 'UTC', // the dates are midnight UTC; local time would shift them
+});
+
+// Only the next couple, and only ones that are actually happening.
+const alsoComing = upcoming.filter((m) => !m.canceled && m.id !== meeting.id).slice(0, 2);
+---
+
+<div class="rounded-lg border border-edge bg-surface p-6 sm:p-8">
+  <Prompt command="dev-club --next-meeting" />
+
+  <h2 class="mt-4 font-mono text-2xl font-semibold">{meeting.title}</h2>
+
+  <dl class="mt-5 grid gap-4 font-mono text-sm sm:grid-cols-3">
+    <div>
+      <dt class="text-muted">when</dt>
+      <dd class="mt-1 text-gold">{dateFormat.format(meeting.date)}</dd>
+    </div>
+    <div>
+      <dt class="text-muted">time</dt>
+      <dd class="mt-1 text-gold">{meeting.time}</dd>
+    </div>
+    <div>
+      <dt class="text-muted">where</dt>
+      <dd class="mt-1 text-gold">{meeting.where}</dd>
+    </div>
+  </dl>
+
+  {/*
+    If this meeting is not at the usual time or place, say so loudly. The
+    failure we are preventing is somebody pattern-matching "Monday = lunch"
+    and turning up to an empty room.
+  */}
+  {
+    meeting.unusual && (
+      <p class="mt-5 flex gap-2.5 rounded border border-gold/40 bg-gold/10 p-3 text-sm text-bone">
+        <Icon name="lucide:triangle-alert" class="mt-0.5 h-4 w-4 shrink-0 text-gold" />
+        <span>
+          <strong class="font-semibold">Not the usual time or place.</strong> This
+          one is {meeting.time} in {meeting.where}.
+        </span>
+      </p>
+    )
+  }
+
+  {/* The plan, when somebody has written one. */}
+  {
+    meeting.agenda.length > 0 && (
+      <div class="mt-6">
+        <h3 class="font-mono text-xs uppercase tracking-wide text-muted">
+          What we are doing
+        </h3>
+        <ul class="mt-3 space-y-1.5">
+          {meeting.agenda.map((item) => (
+            <li class="flex gap-2.5 text-sm leading-relaxed text-muted">
+              <span class="text-gold" aria-hidden="true">—</span>
+              <span>{item}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    )
+  }
+
+  {/* Pages we will actually open during the meeting. */}
+  {
+    meeting.links.length > 0 && (
+      <div class="mt-5 flex flex-wrap gap-2">
+        {meeting.links.map((link) => (
+          <a
+            href={href(link.url)}
+            class="rounded border border-edge px-3 py-1.5 font-mono text-xs text-cyan transition-colors hover:border-gold hover:text-gold"
+          >
+            {link.label}
+          </a>
+        ))}
+      </div>
+    )
+  }
+
+  {
+    alsoComing.length > 0 && (
+      <p class="mt-6 border-t border-edge pt-4 font-mono text-xs text-muted">
+        also coming up:{' '}
+        {alsoComing.map((m, i) => (
+          <>
+            {i > 0 && ', '}
+            <a href={href(`/meetings/${m.id}`)} class="transition-colors hover:text-gold">
+              {dateFormat.format(m.date)}
+            </a>
+          </>
+        ))}
+      </p>
+    )
+  }
+</div>

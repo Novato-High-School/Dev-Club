@@ -98,27 +98,113 @@ What is the next thing you want to get running?
 
 ---
 
-## Add a meeting recap or announcement
+## Meetings
 
-Same steps, but in [`src/content/updates/`](src/content/updates/):
+**You do not need a file for an ordinary meeting.** The site works out the
+schedule by itself: Mondays at lunch in 3202, skipping holidays and school
+breaks. A normal week appears on the site with nobody touching anything.
+
+Add a file when there is something to say. Files live in
+[`src/content/meetings/`](src/content/meetings/) and **are named by date** —
+`2026-09-14.md`. There is no `date:` field; the filename is the date, so the
+two can never disagree.
+
+### Before a meeting — the plan
 
 ```markdown
 ---
-title: Recap — the week we finally fixed the bot
-date: 2026-09-18
-kind: recap
+title: Bot commands and first pull requests
+agenda:
+  - Set up GitHub accounts
+  - Open your first pull request
+links:
+  - label: Start here
+    url: /start
+  - label: GitHub track
+    url: /learn/github
 ---
-
-What happened at the meeting, in a few sentences. What did people work on?
-Did anything get finished? What is next?
 ```
 
-`kind` is one of:
+`links` are the pages you will actually open during the meeting, so people can
+follow along from the meeting page.
 
-- `meeting` — an upcoming meeting. The soonest one becomes the "next meeting"
-  box on the home page.
-- `recap` — what happened at a meeting that already occurred.
-- `news` — anything else worth announcing.
+### After a meeting — what happened
+
+Open the same file and write underneath the `---`. Three sentences is plenty.
+
+```markdown
+---
+title: Bot commands and first pull requests
+---
+
+Eight people came. Six got GitHub accounts set up and four opened their first
+pull request, which is a record. Next week we are finishing the `!idea` command.
+```
+
+Nothing moves when you do this. The meeting became an archive entry the moment
+its date passed; adding a body just fills in the write-up.
+
+### A guest speaker
+
+A visit **is** a meeting, so it goes on the meeting file. It appears on the
+Connect page automatically.
+
+```markdown
+---
+title: Guest — what a security job actually looks like
+speaker:
+  name: Full Name
+  role: Security Engineer, Company
+  topic: How attackers actually get in, and how you stop them
+  link: https://company.com/team/their-bio
+---
+```
+
+Only add a guest **after they have agreed to be listed on a public website**,
+and link to a public professional page — never a personal email or phone number.
+
+### A different time or place
+
+```markdown
+---
+title: Evening demo night
+starts: '18:00'
+ends: '19:30'
+where: Library
+---
+```
+
+The site then flags it loudly as "not the usual time", so nobody turns up at
+lunch to an empty room. Meetings on other days work too — just name the file
+after that date.
+
+### Cancelling one
+
+```markdown
+---
+canceled: true
+canceledReason: Rally schedule, no lunch clubs
+---
+```
+
+Holidays and school breaks are already handled, so this is only for surprises.
+
+---
+
+## Add an announcement
+
+For news that is not about a meeting, in
+[`src/content/updates/`](src/content/updates/):
+
+```markdown
+---
+title: We won the county hackathon
+date: 2026-11-02
+kind: news
+---
+
+A few sentences about what happened.
+```
 
 ---
 

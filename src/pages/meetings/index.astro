@@ -1,0 +1,178 @@
+---
+/**
+ * MEETINGS ARCHIVE
+ * ================
+ * Every meeting, past and upcoming. A club with a visible record of turning up
+ * week after week looks like what it is: a real club.
+ *
+ * Past meetings with no write-up are still listed, quietly, with a prompt to
+ * add notes. A visible gap is an invitation; hiding it would just mean nobody
+ * ever fills it in.
+ */
+
+import { Icon } from 'astro-icon/components';
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import HexGrid from '../../components/HexGrid.astro';
+import Prompt from '../../components/Prompt.astro';
+import { href } from '../../lib/href';
+import { getMeetings } from '../../lib/meetings';
+import { CLUB } from '../../config/site';
+
+const { upcoming, past } = await getMeetings();
+
+const dateFormat = new Intl.DateTimeFormat('en-US', {
+  weekday: 'long',
+  month: 'long',
+  day: 'numeric',
+  year: 'numeric',
+  timeZone: 'UTC',
+});
+
+const written = past.filter((m) => m.hasNotes).length;
+---
+
+<BaseLayout
+  title="Meetings"
+  description="Every Dev Club meeting: what we are doing next, and what we did before."
+>
+  <section class="relative overflow-hidden border-b border-edge">
+    <HexGrid class="opacity-50" />
+    <div class="relative mx-auto max-w-6xl px-5 py-16">
+      <Prompt command="ls ./meetings" />
+      <h1 class="mt-4 font-mono text-4xl font-bold tracking-tight">Meetings</h1>
+      <p class="mt-5 max-w-xl leading-relaxed text-muted">
+        {CLUB.meetingDay} at lunch in {CLUB.meetingRoom}. Drop in whenever you
+        can &mdash; nobody is keeping an attendance streak.
+      </p>
+      {/*
+        Subscribing beats remembering. The feed is a plain file, so there is no
+        account to connect and no app permission to grant — it works in Google
+        Calendar, Apple Calendar, or anything else.
+      */}
+      <div class="mt-7 flex flex-wrap gap-3">
+        <a
+          href={href('/meetings.ics')}
+          class="inline-flex items-center gap-2 rounded border border-gold bg-gold px-4 py-2 font-mono text-xs font-medium text-ink transition-colors hover:bg-transparent hover:text-gold"
+        >
+          <Icon name="lucide:calendar-plus" class="h-3.5 w-3.5" />
+          Add to your calendar
+        </a>
+      </div>
+
+      <p class="mt-5 font-mono text-sm text-muted">
+        <span class="text-gold">{upcoming.filter((m) => !m.canceled).length}</span
+        >&nbsp;coming up
+        <span class="mx-2 text-edge">|</span>
+        <span class="text-acid">{written}</span>&nbsp;written up
+      </p>
+    </div>
+  </section>
+
+  {/* ---------------------------------------------------------------
+      COMING UP — the next eight, including ones that are cancelled, so a
+      holiday is visible rather than a silent gap in the list.
+  --------------------------------------------------------------- */}
+  <section class="mx-auto max-w-4xl px-5 py-12">
+    <h2 class="font-mono text-2xl font-semibold">Coming up</h2>
+    <ul class="mt-6 space-y-3">
+      {
+        upcoming.slice(0, 8).map((meeting) => (
+          <li>
+            <a
+              href={href(`/meetings/${meeting.id}`)}
+              class:list={[
+                'group flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-lg border p-4 transition-colors',
+                meeting.canceled
+                  ? 'border-edge opacity-60'
+                  : 'border-edge bg-surface hover:border-gold/40',
+              ]}
+            >
+              <span class="font-mono text-sm text-gold">
+                {dateFormat.format(meeting.date)}
+              </span>
+              <span class="text-sm text-bone">
+                {meeting.canceled ? 'No meeting' : meeting.title}
+              </span>
+              {meeting.canceled && meeting.canceledReason && (
+                <span class="font-mono text-xs text-muted">
+                  — {meeting.canceledReason}
+                </span>
+              )}
+              {meeting.unusual && !meeting.canceled && (
+                <span class="rounded-full border border-gold/40 px-2 py-0.5 font-mono text-xs text-gold">
+                  different time
+                </span>
+              )}
+              {meeting.speaker && (
+                <span class="rounded-full border border-cyan/40 px-2 py-0.5 font-mono text-xs text-cyan">
+                  guest speaker
+                </span>
+              )}
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </section>
+
+  {
+    past.length > 0 && (
+      <section class="mx-auto max-w-4xl px-5 pb-16">
+        {/*
+          Everything that has happened, newest first. Meetings nobody wrote up
+          are dimmed rather than hidden: a visible gap is an invitation, and
+          hiding them would mean they never get filled in.
+        */}
+        <h2 class="font-mono text-2xl font-semibold">Already happened</h2>
+        <ul class="mt-6 space-y-3">
+          {past.map((meeting) => (
+            <li>
+              <a
+                href={href(`/meetings/${meeting.id}`)}
+                class:list={[
+                  'group flex flex-wrap items-baseline gap-x-3 gap-y-1 rounded-lg border p-4 transition-colors hover:border-gold/40',
+                  meeting.hasNotes ? 'border-edge bg-surface' : 'border-edge/60',
+                ]}
+              >
+                <span
+                  class:list={[
+                    'font-mono text-sm',
+                    meeting.hasNotes ? 'text-gold' : 'text-muted',
+                  ]}
+                >
+                  {dateFormat.format(meeting.date)}
+                </span>
+                <span
+                  class:list={[
+                    'text-sm',
+                    meeting.hasNotes ? 'text-bone' : 'text-muted',
+                  ]}
+                >
+                  {meeting.canceled ? 'No meeting' : meeting.title}
+                </span>
+                {meeting.canceled && meeting.canceledReason && (
+                  <span class="font-mono text-xs text-muted">
+                    — {meeting.canceledReason}
+                  </span>
+                )}
+                {!meeting.hasNotes && !meeting.canceled && (
+                  <span class="ml-auto inline-flex items-center gap-1.5 font-mono text-xs text-muted transition-colors group-hover:text-cyan">
+                    <Icon name="lucide:pencil" class="h-3 w-3" />
+                    no notes yet
+                  </span>
+                )}
+              </a>
+            </li>
+          ))}
+        </ul>
+
+        <p class="mt-8 rounded-lg border border-dashed border-edge p-5 text-sm leading-relaxed text-muted">
+          <span class="font-mono text-gold">//</span> Were you at one of these?
+          Writing up what happened is three sentences and a genuinely useful
+          first contribution.
+        </p>
+      </section>
+    )
+  }
+</BaseLayout>

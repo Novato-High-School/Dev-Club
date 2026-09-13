@@ -114,17 +114,36 @@ export interface Period {
   end: string;
 }
 
-export const PERIODS: { regular: Period; block: Period } = {
-  /**
-   * Lunch on a normal (non-block) day — which is when the club currently
-   * meets, since we meet on Mondays.
-   *
-   * TODO: fill in the real start and end times. While these are empty the site
-   * simply shows the word "Lunch" and no clock times, which is vague but
-   * honest. Do not guess: a wrong time sends somebody to an empty room.
-   */
-  regular: { label: 'Lunch', start: '', end: '' },
+/**
+ * Which day(s) the club meets. 0 = Sunday, 1 = Monday, ...
+ * Change this and every upcoming meeting date follows automatically.
+ */
+export const MEETING_DAYS = [1] as const; // Mondays
 
-  /** Lunch on a block day (Tuesday and Wednesday). */
+/**
+ * The school's published calendar feed. We read it at build time to find the
+ * long breaks — winter, mid-winter, spring — which move around year to year.
+ *
+ * If this is unreachable the site still builds: it falls back to the computed
+ * holidays below. A district web outage must never break our site.
+ */
+export const SCHOOL_CALENDAR_ICS =
+  'https://novatohigh.nusd.org/sndreq/generateCalendarICS.php?calendar_id=138811';
+
+/**
+ * Days with no meeting that nothing else catches.
+ *
+ * Most closures are worked out automatically — see src/lib/holidays.ts — so
+ * this is only for surprises. Put the reason in the comment.
+ */
+export const SKIP_DATES: { date: string; reason: string }[] = [
+  // { date: '2026-10-30', reason: 'Rally schedule, no lunch clubs' },
+];
+
+export const PERIODS: { regular: Period; block: Period } = {
+  /** Lunch on a normal day — Monday, Thursday and Friday. */
+  regular: { label: 'Lunch', start: '12:25', end: '12:55' },
+
+  /** Lunch on a block day — Tuesday and Wednesday. Earlier and shorter. */
   block: { label: 'Lunch', start: '11:40', end: '12:10' },
 };
