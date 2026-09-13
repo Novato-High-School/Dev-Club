@@ -64,6 +64,42 @@ Change the line, save, done. The real page is always written into the HTML
 underneath, so search engines and anyone without JavaScript get the full site in
 every mode — the terminal is a layer on top, never a wall in front.
 
+## Club artwork
+
+All of it is generated from [`src/lib/banner.ts`](src/lib/banner.ts), using the
+same palette and fonts as the website, so nothing can drift out of sync.
+
+| Address | What it is |
+| --- | --- |
+| `/og.png` | 1200×630 link preview. Shows up automatically when the site is pasted into Remind, Discord or a text |
+| `/banner/2x4.svg` | 2ft × 4ft printed banner, vector |
+| `/banner/2x4.png` | The same at 150 dpi, for print shops that will not take vector |
+| `/banner/1.6x3.svg` | 1.6ft × 3ft version |
+| `/banner/1.6x3.png` | The same, raster |
+
+Send a print shop the **.svg** if they will take it — it is vector, so it stays
+sharp at any size, and it is a few kilobytes rather than a megabyte.
+
+### Adding a topic logo
+
+One line in `TOPICS` in [`src/config/site.ts`](src/config/site.ts). The layout
+spaces itself out for however many there are.
+
+```ts
+{ icon: 'raspberrypi', label: 'Hardware' },
+```
+
+`icon` is a name from [simpleicons.org](https://simpleicons.org) — lowercase,
+no dots or spaces, so Node.js is `nodedotjs` and Azure is `microsoftazure`. If
+the name is wrong the build stops and tells you.
+
+The banner also carries a QR code to the site, generated automatically, so
+nobody has to type a URL off a four-foot banner.
+
+**On the logos:** these are other companies' trademarks. Using them to say "we
+teach this" is normal, but do not recolour or restyle them, and do not imply
+any of them sponsors the club.
+
 ## Moving to a custom domain
 
 Two steps:

@@ -147,3 +147,38 @@ export const PERIODS: { regular: Period; block: Period } = {
   /** Lunch on a block day — Tuesday and Wednesday. Earlier and shorter. */
   block: { label: 'Lunch', start: '11:40', end: '12:10' },
 };
+
+/**
+ * TOPICS ON THE BANNER
+ * ====================
+ * What we cover, shown as logos on the club banner and the link-preview image.
+ *
+ * ADDING ONE IS A SINGLE LINE. `icon` is a name from Simple Icons —
+ * https://simpleicons.org — lowercase with no spaces or dots, so "Node.js" is
+ * `nodedotjs` and "Azure" is `microsoftazure`. If a logo is missing the banner
+ * build will tell you the name it could not find.
+ *
+ * A note on the logos: these are other people's trademarks. Using them to say
+ * "we teach this" is normal and fine, but do not restyle them, recolour them,
+ * or imply the company sponsors the club.
+ */
+export const TOPICS: { icon: string; label: string }[] = [
+  { icon: 'github', label: 'GitHub' },
+  { icon: 'python', label: 'Python' },
+  { icon: 'microsoftazure', label: 'Azure' },
+  { icon: 'swift', label: 'Swift' },
+  { icon: 'javascript', label: 'JavaScript' },
+  { icon: 'discord', label: 'Bots' },
+];
+
+/**
+ * Sizes the printed banner is generated at. The club fair banners are tall and
+ * narrow, and meant to be read from several feet away.
+ *
+ * Everything is laid out at 50 units per inch, so a font-size of 100 is two
+ * inches tall on the finished print no matter which size you pick.
+ */
+export const BANNER_SIZES: { id: string; inchesWide: number; inchesTall: number }[] = [
+  { id: '2x4', inchesWide: 24, inchesTall: 48 },
+  { id: '1.6x3', inchesWide: 19.2, inchesTall: 36 },
+];
