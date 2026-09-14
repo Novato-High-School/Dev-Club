@@ -78,7 +78,10 @@ same palette and fonts as the website, so nothing can drift out of sync.
 | `/banner/1.6x3.png` | The same, raster |
 
 Send a print shop the **.svg** if they will take it — it is vector, so it stays
-sharp at any size, and it is a few kilobytes rather than a megabyte.
+sharp at any size. All of the lettering is converted to outlines, which is the
+thing print shops mean when they ask you to "convert text to outlines": the file
+carries its own letter shapes and does not need our fonts installed anywhere.
+The `.png` is there for shops that will not take vector.
 
 ### Adding a topic logo
 

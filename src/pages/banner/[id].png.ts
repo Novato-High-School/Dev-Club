@@ -25,7 +25,7 @@ export function getStaticPaths() {
 export const GET: APIRoute = async ({ props }) => {
   const { size } = props as { size: (typeof BANNER_SIZES)[number] };
 
-  const svg = posterSVG(size.inchesWide, size.inchesTall, await qrCode());
+  const svg = await posterSVG(size.inchesWide, size.inchesTall, await qrCode());
   const png = await svgToPng(svg, size.inchesWide * DOTS_PER_INCH);
 
   return new Response(new Uint8Array(png), {

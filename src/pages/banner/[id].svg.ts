@@ -50,7 +50,7 @@ export async function qrCode(): Promise<{ path: string; size: number }> {
 export const GET: APIRoute = async ({ props }) => {
   const { size } = props as { size: (typeof BANNER_SIZES)[number] };
 
-  const svg = posterSVG(size.inchesWide, size.inchesTall, await qrCode());
+  const svg = await posterSVG(size.inchesWide, size.inchesTall, await qrCode());
 
   return new Response(svg, {
     headers: { 'Content-Type': 'image/svg+xml; charset=utf-8' },
