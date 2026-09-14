@@ -91,6 +91,27 @@ the meeting box, since they are cheaper to reprint.
 Sizes live in `BANNER_SIZES` in the config; anything wider than it is tall gets
 the landscape treatment automatically.
 
+### Other brand assets
+
+| Address | What it is |
+| --- | --- |
+| `/brand/form-banner.svg` · `.png` | 1600×400 header for a Google Form or Classroom |
+| `/brand/letterhead.svg` · `.png` | US Letter letterhead, **light** — for real letters |
+| `/brand/flyer.svg` · `.png` | US Letter flyer, **light** — made to be photocopied |
+| `/brand/avatar.svg` · `.png` | 512×512 square mark for Discord, Classroom, anywhere round |
+
+Anything going near a printer is light, on purpose. A full-bleed near-black
+page costs a fortune in toner, jams school copiers and looks terrible
+photocopied. Screens get the dark version; paper does not.
+
+The palettes are in [`src/lib/banner.ts`](src/lib/banner.ts). The light one is
+not just an inversion: gold stays bright where it is a rule or a block of
+colour, but gold **text** becomes a much darker gold, because `#ffc400` on
+white is about 1.6:1 contrast — fine on a screen, invisible on a copier.
+
+Adding an asset is one entry in `BRAND_ASSETS` in
+[`src/config/site.ts`](src/config/site.ts).
+
 Send a print shop the **.svg** if they will take it — it is vector, so it stays
 sharp at any size. All of the lettering is converted to outlines, which is the
 thing print shops mean when they ask you to "convert text to outlines": the file

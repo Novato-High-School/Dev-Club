@@ -207,3 +207,64 @@ export const BANNER_SIZES: { id: string; inchesWide: number; inchesTall: number 
  * so nobody is trapped by it.
  */
 export const QR_TARGET_QUERY = '?boot';
+
+/**
+ * BRAND ASSETS
+ * ============
+ * Everything the club needs besides the printed banners: a header for a Google
+ * Form, letterhead for real letters, a photocopiable flyer, a square avatar.
+ *
+ * ADDING ONE IS A SINGLE ENTRY. `kind` picks the layout, `theme` picks the
+ * palette, and `unit` says whether the numbers are pixels (for screens) or
+ * inches (for paper).
+ *
+ * A note on `theme: 'light'`: anything going near a printer is light. A
+ * full-bleed near-black page costs a fortune in toner, jams school copiers,
+ * and looks awful photocopied. Screens get the dark version; paper does not.
+ */
+export const BRAND_ASSETS: {
+  id: string;
+  label: string;
+  kind: 'form-banner' | 'letterhead' | 'flyer' | 'avatar';
+  theme: 'dark' | 'light';
+  width: number;
+  height: number;
+  unit: 'px' | 'in';
+}[] = [
+  {
+    id: 'form-banner',
+    label: 'Google Form / Classroom header',
+    kind: 'form-banner',
+    theme: 'dark',
+    width: 1600,
+    height: 400,
+    unit: 'px',
+  },
+  {
+    id: 'letterhead',
+    label: 'Letterhead, US Letter',
+    kind: 'letterhead',
+    theme: 'light',
+    width: 8.5,
+    height: 11,
+    unit: 'in',
+  },
+  {
+    id: 'flyer',
+    label: 'Photocopiable flyer, US Letter',
+    kind: 'flyer',
+    theme: 'light',
+    width: 8.5,
+    height: 11,
+    unit: 'in',
+  },
+  {
+    id: 'avatar',
+    label: 'Square avatar — Discord, Classroom, anywhere round',
+    kind: 'avatar',
+    theme: 'dark',
+    width: 512,
+    height: 512,
+    unit: 'px',
+  },
+];

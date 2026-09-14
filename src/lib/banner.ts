@@ -20,16 +20,48 @@ import iconData from '@iconify-json/simple-icons/icons.json';
 import { TOPICS, CLUB, SITE_NAME, SITE_URL_DISPLAY } from '../config/site';
 import { outline, outlineText, textWidth, fitSize } from './fonts';
 
-/** The palette, matching src/styles/global.css exactly. */
-const COLOR = {
-  ink: '#0b0c0e',
-  surface: '#141619',
-  edge: '#24272c',
-  bone: '#e8e9ec',
-  muted: '#9aa0a8',
-  gold: '#ffc400',
-  cyan: '#22d3ee',
+/**
+ * THE PALETTES
+ * ============
+ * `dark` matches src/styles/global.css exactly — it is the website's palette.
+ *
+ * `light` is the same identity inverted for paper. Two things change beyond
+ * the obvious swap:
+ *
+ *  - `gold` stays bright, because as a rule or a block of colour it still
+ *    reads as ours on white.
+ *  - `goldInk` is a much darker gold, used wherever gold would be TEXT.
+ *    #ffc400 on white is about 1.7:1 contrast — legible on a screen for a
+ *    heading, illegible photocopied. The dark gold clears 5:1 and still looks
+ *    like the same brand.
+ */
+export type Theme = 'dark' | 'light';
+
+const PALETTES = {
+  dark: {
+    ink: '#0b0c0e',
+    surface: '#141619',
+    edge: '#24272c',
+    bone: '#e8e9ec',
+    muted: '#9aa0a8',
+    gold: '#ffc400',
+    goldInk: '#ffc400',
+    cyan: '#22d3ee',
+  },
+  light: {
+    ink: '#ffffff',
+    surface: '#f5f4f1',
+    edge: '#d9d7d2',
+    bone: '#0b0c0e',
+    muted: '#565b62',
+    gold: '#ffc400',
+    goldInk: '#7a5c00',
+    cyan: '#0e6d80',
+  },
 } as const;
+
+/** The website's palette, used by everything that is not print. */
+const COLOR = PALETTES.dark;
 
 /**
  * Every word in this artwork is drawn as outlines rather than as text with a
@@ -67,7 +99,13 @@ function logo(name: string, cx: number, cy: number, size: number, fill: string):
  * 1.5 × the side length apart and every other row shifts half a hexagon
  * sideways. Stack them any other way and they stop interlocking.
  */
-function honeycomb(width: number, height: number, side: number, opacity: number): string {
+function honeycomb(
+  width: number,
+  height: number,
+  side: number,
+  opacity: number,
+  stroke: string = COLOR.gold,
+): string {
   const hexWidth = side * Math.sqrt(3);
   const rowPitch = side * 1.5;
   const half = hexWidth / 2;
@@ -87,7 +125,7 @@ function honeycomb(width: number, height: number, side: number, opacity: number)
     return row * rowPitch;
   }
 
-  return `<g opacity="${opacity}" fill="none" stroke="${COLOR.gold}" stroke-width="${Math.max(1, side / 26)}">
+  return `<g opacity="${opacity}" fill="none" stroke="${stroke}" stroke-width="${Math.max(1, side / 26)}">
     <path d="${cells.join(' ')}"/>
   </g>`;
 }
@@ -188,9 +226,21 @@ async function qrBlock(
     placement: 'above' | 'left';
     /** Gap between caption and code. */
     gap: number;
+    /**
+     * Colours, for the light paper versions. The CARD stays pale and the
+     * modules stay dark whatever the theme — a QR code inverted does not
+     * reliably scan, so this is the one thing that never flips.
+     */
+    colours?: { caption: string; sub: string; card: string; code: string; cardEdge?: string };
   },
 ): Promise<string> {
   const { x, y, side, captionSize, captionMaxWidth, lines, placement, gap } = options;
+  const colours = options.colours ?? {
+    caption: COLOR.bone,
+    sub: COLOR.muted,
+    card: COLOR.bone,
+    code: COLOR.ink,
+  };
   const pad = side * 0.08;
 
   // The second line, when there is one, is usually the longer of the two, so
@@ -212,14 +262,14 @@ async function qrBlock(
     placement === 'above'
       ? await Promise.all(
           [
-            outline(lines[0], COLOR.bone, {
+            outline(lines[0], colours.caption, {
               x: x + side / 2,
               // With no second line the heading drops to where it would be.
               y: hasSub ? mainBaseline : subBaseline,
               size: captionSize, family: 'display', weight: 700, anchor: 'middle',
             }),
             hasSub
-              ? outline(lines[1], COLOR.muted, {
+              ? outline(lines[1], colours.sub, {
                   x: x + side / 2, y: subBaseline,
                   size: subSize, family: 'mono', anchor: 'middle',
                 })
@@ -228,14 +278,14 @@ async function qrBlock(
         )
       : await Promise.all(
           [
-            outline(lines[0], COLOR.bone, {
+            outline(lines[0], colours.caption, {
               x: x - gap,
               // A single line sits centred on the code beside it.
               y: y + side * (hasSub ? 0.45 : 0.58),
               size: captionSize, family: 'display', weight: 700, anchor: 'end',
             }),
             hasSub
-              ? outline(lines[1], COLOR.muted, {
+              ? outline(lines[1], colours.sub, {
                   x: x - gap, y: y + side * 0.72,
                   size: subSize, family: 'mono', anchor: 'end',
                 })
@@ -245,8 +295,8 @@ async function qrBlock(
 
   return `${caption.join('')}
   <g transform="translate(${x} ${y})">
-    <rect x="${-pad}" y="${-pad}" width="${side + pad * 2}" height="${side + pad * 2}" fill="${COLOR.bone}" rx="${pad * 0.6}"/>
-    <g transform="scale(${side / qr.size})" fill="${COLOR.ink}" shape-rendering="crispEdges">
+    <rect x="${-pad}" y="${-pad}" width="${side + pad * 2}" height="${side + pad * 2}" fill="${colours.card}" rx="${pad * 0.6}"${colours.cardEdge ? ` stroke="${colours.cardEdge}" stroke-width="${pad * 0.2}"` : ''}/>
+    <g transform="scale(${side / qr.size})" fill="${colours.code}" shape-rendering="crispEdges">
       <path d="${qr.path}"/>
     </g>
   </g>`;
@@ -536,3 +586,284 @@ async function portraitSVG(
 
 // Kept for the page titles that use it.
 export { SITE_NAME };
+
+/* ==========================================================================
+   BRAND ASSETS
+   Everything that is not a printed banner: a form header, letterhead, a
+   photocopiable flyer, a square avatar. Each takes a palette, so the same
+   code produces the screen version and the paper version.
+   ========================================================================== */
+
+type Palette = (typeof PALETTES)['dark'];
+
+function palette(theme: Theme): Palette {
+  return PALETTES[theme] as Palette;
+}
+
+/**
+ * GOOGLE FORM / CLASSROOM HEADER — 1600×400.
+ *
+ * Wide and short, and cropped hard on narrow screens, so everything that
+ * matters stays in the middle band rather than near the edges.
+ */
+export async function formBannerSVG(width: number, height: number, theme: Theme): Promise<string> {
+  const c = palette(theme);
+  const left = width * 0.06;
+
+  const titleSize = Math.min(
+    await fitSize('while { Dev Club }', width * 0.56, 'mono', 700),
+    height * 0.3,
+  );
+
+  const parts = await Promise.all([
+    outlineText(
+      [
+        { text: 'while', fill: c.goldInk },
+        { text: ' { ', fill: c.muted },
+        { text: 'Dev Club', fill: c.bone },
+        { text: ' }', fill: c.muted },
+      ],
+      { x: left, y: height * 0.47, size: titleSize, family: 'mono', weight: 700 },
+    ),
+    outline('Build real things for real users.', c.bone, {
+      x: left, y: height * 0.68, size: height * 0.085, family: 'display', weight: 700,
+    }),
+    outline('No experience needed.', c.goldInk, {
+      x: left, y: height * 0.84, size: height * 0.075, family: 'display',
+    }),
+  ]);
+
+  // Logos stacked down the right, clear of the text.
+  const logoSize = height * 0.13;
+  const marks = TOPICS.slice(0, 6).map((topic, i) => {
+    const column = i % 2;
+    const row = Math.floor(i / 2);
+    return logo(
+      topic.icon,
+      width * 0.76 + column * logoSize * 1.9,
+      height * 0.3 + row * logoSize * 1.75,
+      logoSize,
+      c.muted,
+    );
+  });
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+  <rect width="${width}" height="${height}" fill="${c.ink}"/>
+  ${honeycomb(width, height, height / 5, theme === 'light' ? 0.25 : 0.12, c.gold)}
+  <rect x="0" y="0" width="${width}" height="${height * 0.02}" fill="${c.gold}"/>
+  ${parts.join('\n  ')}
+  ${marks.join('\n  ')}
+</svg>`;
+}
+
+/**
+ * LETTERHEAD — US Letter, light.
+ *
+ * Deliberately almost empty. It is a page somebody writes a real letter on, so
+ * it gets an identity at the top, a rule, and a quiet footer, and then stays
+ * out of the way. No full-bleed colour: this goes through a school printer.
+ */
+export async function letterheadSVG(
+  inchesWide: number,
+  inchesTall: number,
+  theme: Theme,
+): Promise<string> {
+  const c = palette(theme);
+  const UNITS_PER_INCH = 100;
+  const W = inchesWide * UNITS_PER_INCH;
+  const H = inchesTall * UNITS_PER_INCH;
+  const margin = W * 0.09;
+
+  const parts = await Promise.all([
+    outlineText(
+      [
+        { text: 'while', fill: c.goldInk },
+        { text: ' { ', fill: c.muted },
+        { text: 'Dev Club', fill: c.bone },
+        { text: ' }', fill: c.muted },
+      ],
+      { x: margin, y: H * 0.072, size: W * 0.042, family: 'mono', weight: 700 },
+    ),
+    outline('Novato High School', c.muted, {
+      x: W - margin, y: H * 0.072, size: W * 0.022, family: 'display', anchor: 'end',
+    }),
+    outline('Dev Club \u00b7 Novato High School', c.muted, {
+      x: margin, y: H * 0.957, size: W * 0.018, family: 'mono',
+    }),
+    outline(SITE_URL_DISPLAY, c.muted, {
+      x: W - margin, y: H * 0.957, size: W * 0.018, family: 'mono', anchor: 'end',
+    }),
+  ]);
+
+  return `<svg xmlns="http://www.w3.org/2000/svg"
+     width="${inchesWide}in" height="${inchesTall}in"
+     viewBox="0 0 ${W} ${H}">
+  <rect width="${W}" height="${H}" fill="${c.ink}"/>
+
+  <!-- A single gold rule under the identity. The only colour on the page. -->
+  <rect x="${margin}" y="${H * 0.088}" width="${W - margin * 2}" height="${H * 0.004}" fill="${c.gold}"/>
+
+  <!-- And a hairline above the footer. -->
+  <rect x="${margin}" y="${H * 0.932}" width="${W - margin * 2}" height="${H * 0.0012}" fill="${c.edge}"/>
+
+  ${parts.join('\n  ')}
+</svg>`;
+}
+
+/**
+ * FLYER — US Letter, light, made to be photocopied.
+ *
+ * Light on purpose: these get run off fifty at a time on a school copier, and
+ * a dark page would be unreadable and ruinous. Unlike the banners it DOES
+ * carry the meeting time and room, because a flyer is disposable — reprinting
+ * one is a photocopy, not a new banner.
+ */
+export async function flyerSVG(
+  inchesWide: number,
+  inchesTall: number,
+  theme: Theme,
+  qr: { path: string; size: number },
+): Promise<string> {
+  const c = palette(theme);
+  const UNITS_PER_INCH = 100;
+  const W = inchesWide * UNITS_PER_INCH;
+  const H = inchesTall * UNITS_PER_INCH;
+  const mid = W / 2;
+  const margin = W * 0.08;
+
+  const titleSize = Math.min(
+    await fitSize('{ Dev Club }', W - margin * 2, 'mono', 700),
+    H * 0.1,
+  );
+
+  const heading = await Promise.all([
+    outline('while', c.goldInk, {
+      x: mid, y: H * 0.145, size: titleSize * 1.05, family: 'mono', weight: 700, anchor: 'middle',
+    }),
+    outlineText(
+      [
+        { text: '{ ', fill: c.muted },
+        { text: 'Dev Club', fill: c.bone },
+        { text: ' }', fill: c.muted },
+      ],
+      { x: mid, y: H * 0.225, size: titleSize, family: 'mono', weight: 700, anchor: 'middle' },
+    ),
+    outline('Build real things for real users.', c.bone, {
+      x: mid, y: H * 0.295, size: W * 0.038, family: 'display', weight: 700, anchor: 'middle',
+    }),
+    outline('No experience needed.', c.goldInk, {
+      x: mid, y: H * 0.345, size: W * 0.034, family: 'display', anchor: 'middle',
+    }),
+  ]);
+
+  // Topics, two columns.
+  const logoSize = H * 0.032;
+  const rows = Math.ceil(TOPICS.length / 2);
+  const topicTop = H * 0.43;
+  const rowHeight = H * 0.05;
+  const labelSize = logoSize * 0.72;
+
+  const topicMarks = await Promise.all(
+    TOPICS.map(async (topic, i) => {
+      const column = i % 2;
+      const row = Math.floor(i / 2);
+      const centre = column === 0 ? W * 0.32 : W * 0.68;
+      const cy = topicTop + row * rowHeight;
+      const width = await textWidth(topic.label, labelSize, 'mono');
+      const block = logoSize + logoSize * 0.5 + width;
+      const logoCx = centre - block / 2 + logoSize / 2;
+      const label = await outline(topic.label, c.muted, {
+        x: logoCx + logoSize / 2 + logoSize * 0.5,
+        y: cy + labelSize * 0.35,
+        size: labelSize,
+        family: 'mono',
+      });
+      return `${logo(topic.icon, logoCx, cy, logoSize, c.bone)}${label}`;
+    }),
+  );
+
+  const boxTop = topicTop + rows * rowHeight + H * 0.02;
+  const meeting = await Promise.all([
+    outline(CLUB.meetingDay, c.goldInk, {
+      x: mid, y: boxTop + H * 0.042, size: W * 0.05, family: 'mono', weight: 700, anchor: 'middle',
+    }),
+    outline(`Lunch \u00b7 Room ${CLUB.meetingRoom}`, c.bone, {
+      x: mid, y: boxTop + H * 0.078, size: W * 0.036, family: 'mono', anchor: 'middle',
+    }),
+  ]);
+
+  // The honeycomb is very faint on paper: a copier turns mid-tone yellow into
+  // grey mush, and this has to survive being run off fifty times.
+  const qrSide = H * 0.13;
+  const qrArt = await qrBlock(qr, {
+    x: mid - qrSide / 2,
+    y: H * 0.79,
+    side: qrSide,
+    captionSize: W * 0.032,
+    lines: ['Scan to break in'],
+    placement: 'above',
+    gap: H * 0.012,
+    // Pale card, dark modules — always, whatever the page behind it is.
+    colours: {
+      caption: c.bone,
+      sub: c.muted,
+      card: '#ffffff',
+      code: '#0b0c0e',
+      cardEdge: theme === 'light' ? c.edge : undefined,
+    },
+  });
+
+  const url = await outline(SITE_URL_DISPLAY, c.muted, {
+    x: mid, y: H * 0.955, size: W * 0.024, family: 'mono', anchor: 'middle',
+  });
+
+  return `<svg xmlns="http://www.w3.org/2000/svg"
+     width="${inchesWide}in" height="${inchesTall}in"
+     viewBox="0 0 ${W} ${H}">
+  <rect width="${W}" height="${H}" fill="${c.ink}"/>
+  ${honeycomb(W, H, W / 9, theme === 'light' ? 0.16 : 0.13, c.gold)}
+
+  <rect x="0" y="0" width="${W}" height="${H * 0.012}" fill="${c.gold}"/>
+  <rect x="0" y="${H - H * 0.012}" width="${W}" height="${H * 0.012}" fill="${c.gold}"/>
+
+  ${heading.join('\n  ')}
+  ${topicMarks.join('\n  ')}
+
+  <rect x="${margin}" y="${boxTop}" width="${W - margin * 2}" height="${H * 0.1}" rx="${W * 0.015}" fill="none" stroke="${c.edge}" stroke-width="${W * 0.003}"/>
+  ${meeting.join('\n  ')}
+
+  ${qrArt}
+  ${url}
+</svg>`;
+}
+
+/**
+ * SQUARE AVATAR — Discord, Classroom, anywhere that wants a round icon.
+ *
+ * Everything important sits well inside the circle those platforms crop to.
+ */
+export async function avatarSVG(size: number, theme: Theme): Promise<string> {
+  const c = palette(theme);
+  const mid = size / 2;
+  const side = size * 0.34;
+  const half = (side * Math.sqrt(3)) / 2;
+
+  const hex =
+    `M${mid} ${mid - side} L${mid + half} ${mid - side / 2} L${mid + half} ${mid + side / 2} ` +
+    `L${mid} ${mid + side} L${mid - half} ${mid + side / 2} L${mid - half} ${mid - side / 2} Z`;
+
+  const braces = await outlineText(
+    [
+      { text: '{ ', fill: c.gold },
+      { text: '}', fill: c.gold },
+    ],
+    { x: mid, y: mid + size * 0.1, size: size * 0.34, family: 'mono', weight: 700, anchor: 'middle' },
+  );
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
+  <rect width="${size}" height="${size}" fill="${c.ink}"/>
+  ${honeycomb(size, size, size / 6, 0.12, c.gold)}
+  <path d="${hex}" fill="none" stroke="${c.gold}" stroke-width="${size * 0.022}"/>
+  ${braces}
+</svg>`;
+}
