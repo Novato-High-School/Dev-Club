@@ -95,30 +95,63 @@ const tracks = defineCollection({
 });
 
 /**
- * SPEAKERS - guest speakers and career paths. Shown on the Connect page.
+ * MEETINGS - one file per meeting, named by date: 2026-09-14.md
  *
- * Note this collection is for ADULT professionals visiting the club, which is
- * why it has a name field. Do not use it for students.
+ * You do NOT need a file for an ordinary meeting. The site works out the
+ * schedule on its own, so a normal Monday appears with no file at all.
+ *
+ * Add a file when there is something to say: an agenda beforehand, notes
+ * afterwards, a guest speaker, a different time or room, or a cancellation.
+ *
+ * The DATE COMES FROM THE FILENAME. There is no date field, on purpose - a
+ * file called 2026-09-14.md containing "date: 2026-09-17" is a contradiction
+ * waiting to happen, and we have been bitten by exactly that already.
  */
-const speakers = defineCollection({
-  loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/speakers' }),
+const meetings = defineCollection({
+  loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/meetings' }),
   schema: z.object({
-    // The guest's name, used with their permission.
-    name: z.string(),
-    // Their job title and employer, e.g. "Software Engineer, Autodesk".
-    role: z.string(),
-    // What they came to talk about.
-    topic: z.string(),
-    // Date of the visit, written as YYYY-MM-DD.
-    date: z.coerce.date(),
-    // Optional public professional link, such as a company bio page.
-    link: z.url().optional(),
+    // What this meeting is about. Optional - without it the site just says
+    // "Weekly meeting".
+    title: z.string().optional(),
+
+    // Set true when a meeting is called off. Say why: the site shows the
+    // reason rather than silently dropping the meeting.
+    canceled: z.boolean().default(false),
+    canceledReason: z.string().optional(),
+
+    // Override the usual time and place for this one meeting. `starts` and
+    // `ends` are 24-hour "HH:MM" and feed the calendar; `time` is only for
+    // when you want different wording on the page.
+    starts: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+    ends: z.string().regex(/^\d{2}:\d{2}$/).optional(),
+    time: z.string().optional(),
+    where: z.string().optional(),
+
+    // What you plan to do, shown before the meeting happens.
+    agenda: z.array(z.string()).default([]),
+
+    // Pages we will actually use in the meeting. Internal links can be
+    // written the short way, e.g. /learn/github.
+    links: z
+      .array(z.object({ label: z.string(), url: z.string() }))
+      .default([]),
+
+    // A visiting guest. This is for ADULT professionals who have agreed to be
+    // listed on a public website - never for students. Link to a public
+    // professional page, never a personal email or phone number.
+    speaker: z
+      .object({
+        name: z.string(),
+        role: z.string(),
+        topic: z.string().optional(),
+        link: z.url().optional(),
+      })
+      .optional(),
   }),
 });
 
 /**
- * UPDATES - announcements and meeting recaps. The newest one with
- * kind: 'meeting' becomes the "next meeting" box on the home page.
+ * UPDATES - announcements that are not tied to a meeting.
  */
 const updates = defineCollection({
   loader: glob({ pattern: '**/*.{md,mdx}', base: './src/content/updates' }),
@@ -127,14 +160,11 @@ const updates = defineCollection({
     title: z.string(),
     // Date it happens or happened, written as YYYY-MM-DD.
     date: z.coerce.date(),
-    // 'meeting' for an upcoming meeting, 'recap' for what happened at one,
-    // 'news' for anything else worth announcing.
-    kind: z.enum(['meeting', 'recap', 'news']),
-    // Optional room number or place, only useful for meetings.
-    where: z.string().optional(),
+    // Only 'news' now - meeting agendas and recaps live in src/content/meetings/.
+    kind: z.enum(['news']).default('news'),
   }),
 });
 
 // Hand all four collections to Astro. Every collection must be listed here or
 // Astro will not know it exists.
-export const collections = { projects, tracks, speakers, updates };
+export const collections = { projects, tracks, meetings, updates };

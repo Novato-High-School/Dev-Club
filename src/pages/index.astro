@@ -2,46 +2,35 @@
 /**
  * HOME PAGE
  * =========
- * Who we are, when we meet, and how to join. The "next meeting" box is not
- * typed in here — it comes from the newest file in src/content/updates/ whose
- * kind is 'meeting', so keeping it current means editing one Markdown file.
+ * Who we are, when we meet, and how to join. The "next meeting" box is worked
+ * out from the schedule in src/lib/meetings.ts — nobody edits it weekly.
  */
 
 import { getCollection, render } from 'astro:content';
+import { getMeetings } from '../lib/meetings';
 
 import BaseLayout from '../layouts/BaseLayout.astro';
 import BootTerminal from '../components/BootTerminal.astro';
 import HexGrid from '../components/HexGrid.astro';
 import Prompt from '../components/Prompt.astro';
 import RepoCard from '../components/RepoCard.astro';
+import MeetingBox from '../components/MeetingBox.astro';
 import { href } from '../lib/href';
-import { CLUB, BOOT_MODE, SITE_DESCRIPTION } from '../config/site';
-import { meetingTime } from '../lib/schedule';
+import { BOOT_MODE, SITE_DESCRIPTION } from '../config/site';
 
-// Find the next meeting: the soonest meeting that has not happened yet.
-const updates = await getCollection('updates');
-const meetings = updates
-  .filter((entry) => entry.data.kind === 'meeting')
-  .sort((a, b) => a.data.date.getTime() - b.data.date.getTime());
-// A meeting counts as "upcoming" until the end of the day it happens on, so
-// the box does not vanish on the morning of the meeting itself. (Dates from
-// Markdown are midnight UTC, so we add a day's worth of milliseconds.)
-const ONE_DAY = 24 * 60 * 60 * 1000;
-const now = Date.now();
-const nextMeeting =
-  meetings.find((entry) => entry.data.date.getTime() + ONE_DAY >= now) ??
-  meetings.at(-1);
+// The schedule works out the next meeting on its own - see src/lib/meetings.ts.
+const { upcoming, next: nextMeeting } = await getMeetings();
 
 // Show the two or three projects marked as featured on the home page.
 const featured = (await getCollection('projects'))
   .filter((entry) => entry.data.featured)
   .slice(0, 3);
 
-// The three most recent announcements and meeting recaps. Their Markdown
-// bodies are turned into HTML here so the markup below stays readable.
+// The three most recent announcements. Their Markdown bodies are turned into
+// HTML here so the markup below stays readable.
+const updates = await getCollection('updates');
 const recent = await Promise.all(
   updates
-    .filter((entry) => entry.data.kind !== 'meeting')
     .sort((a, b) => b.data.date.getTime() - a.data.date.getTime())
     .slice(0, 3)
     .map(async (entry) => ({
@@ -83,8 +72,8 @@ const dateFormat = new Intl.DateTimeFormat('en-US', {
       </h1>
 
       <p class="mt-6 max-w-xl text-lg leading-relaxed text-muted">
-        The student developer club at Novato High School. We build real things,
-        publish them in the open, and teach each other as we go.&#32;<span
+        The student developer club at Novato High School. We build real things
+        for real users, and teach each other as we go.&#32;<span
           class="text-bone">You do not need to know how to code to walk in.</span
         >
       </p>
@@ -119,39 +108,12 @@ const dateFormat = new Intl.DateTimeFormat('en-US', {
   }
 
   {/* ------------------------------------------------------------------
-      NEXT MEETING — read from src/content/updates/.
+      NEXT MEETING - worked out from the schedule, not typed in anywhere.
   ------------------------------------------------------------------ */}
   {
     nextMeeting && (
       <section class="mx-auto max-w-6xl px-5 py-16">
-        <div class="rounded-lg border border-edge bg-surface p-6 sm:p-8">
-          <Prompt command="dev-club --next-meeting" />
-
-          <h2 class="mt-4 font-mono text-2xl font-semibold">
-            {nextMeeting.data.title}
-          </h2>
-
-          <dl class="mt-5 grid gap-4 font-mono text-sm sm:grid-cols-3">
-            <div>
-              <dt class="text-muted">when</dt>
-              <dd class="mt-1 text-gold">
-                {dateFormat.format(nextMeeting.data.date)}
-              </dd>
-            </div>
-            <div>
-              <dt class="text-muted">time</dt>
-              <dd class="mt-1 text-gold">
-                {meetingTime(nextMeeting.data.date)}
-              </dd>
-            </div>
-            <div>
-              <dt class="text-muted">where</dt>
-              <dd class="mt-1 text-gold">
-                {nextMeeting.data.where ?? CLUB.meetingRoom}
-              </dd>
-            </div>
-          </dl>
-        </div>
+        <MeetingBox meeting={nextMeeting} upcoming={upcoming} />
       </section>
     )
   }
@@ -199,15 +161,8 @@ const dateFormat = new Intl.DateTimeFormat('en-US', {
           {recent.map(({ data, Content }) => (
             <article class="rounded-lg border border-edge bg-surface p-6">
               <div class="flex flex-wrap items-baseline gap-3">
-                <span
-                  class:list={[
-                    'rounded border px-2 py-0.5 font-mono text-xs',
-                    data.kind === 'recap'
-                      ? 'border-cyan/40 text-cyan'
-                      : 'border-gold/40 text-gold',
-                  ]}
-                >
-                  {data.kind}
+                <span class="rounded border border-gold/40 px-2 py-0.5 font-mono text-xs text-gold">
+                  news
                 </span>
                 <h3 class="font-mono text-lg font-semibold">{data.title}</h3>
                 <time

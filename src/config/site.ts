@@ -27,6 +27,13 @@ export const SITE_URL = 'https://novato-high-school.github.io';
 export const BASE = '/Dev-Club';
 
 /**
+ * The address as it should be PRINTED — capitalised so it can be read across a
+ * room, with the trailing slash. Domain names ignore capitals, so this is only
+ * about legibility; it goes on banners, never in a link.
+ */
+export const SITE_URL_DISPLAY = 'Novato-High-School.github.io/Dev-Club/';
+
+/**
  * How the "boot the club" terminal intro behaves.
  *
  *   'skippable' - Full screen terminal on a visitor's first arrival, with a
@@ -56,8 +63,9 @@ export const BOOT_STORAGE_KEY = 'devclub.boot.v1';
 export const SITE_NAME = 'Dev Club';
 export const SITE_LOGO = 'while { Dev Club }';
 export const SITE_DESCRIPTION =
-  'The student developer club at Novato High School. We build real projects, ' +
-  'learn real tools, and welcome people who have never written a line of code.';
+  'The student developer club at Novato High School. We build real things for ' +
+  'real users, learn real tools, and welcome people who have never written a ' +
+  'line of code.';
 
 /**
  * Club details shown on the Home and Join pages.
@@ -114,17 +122,192 @@ export interface Period {
   end: string;
 }
 
-export const PERIODS: { regular: Period; block: Period } = {
-  /**
-   * Lunch on a normal (non-block) day — which is when the club currently
-   * meets, since we meet on Mondays.
-   *
-   * TODO: fill in the real start and end times. While these are empty the site
-   * simply shows the word "Lunch" and no clock times, which is vague but
-   * honest. Do not guess: a wrong time sends somebody to an empty room.
-   */
-  regular: { label: 'Lunch', start: '', end: '' },
+/**
+ * Which day(s) the club meets. 0 = Sunday, 1 = Monday, ...
+ * Change this and every upcoming meeting date follows automatically.
+ */
+export const MEETING_DAYS = [1] as const; // Mondays
 
-  /** Lunch on a block day (Tuesday and Wednesday). */
+/**
+ * The school's published calendar feed. We read it at build time to find the
+ * long breaks — winter, mid-winter, spring — which move around year to year.
+ *
+ * If this is unreachable the site still builds: it falls back to the computed
+ * holidays below. A district web outage must never break our site.
+ */
+export const SCHOOL_CALENDAR_ICS =
+  'https://novatohigh.nusd.org/sndreq/generateCalendarICS.php?calendar_id=138811';
+
+/**
+ * Days with no meeting that nothing else catches.
+ *
+ * Most closures are worked out automatically — see src/lib/holidays.ts — so
+ * this is only for surprises. Put the reason in the comment.
+ */
+export const SKIP_DATES: { date: string; reason: string }[] = [
+  // { date: '2026-10-30', reason: 'Rally schedule, no lunch clubs' },
+];
+
+export const PERIODS: { regular: Period; block: Period } = {
+  /** Lunch on a normal day — Monday, Thursday and Friday. */
+  regular: { label: 'Lunch', start: '12:25', end: '12:55' },
+
+  /** Lunch on a block day — Tuesday and Wednesday. Earlier and shorter. */
   block: { label: 'Lunch', start: '11:40', end: '12:10' },
 };
+
+/**
+ * TOPICS ON THE BANNER
+ * ====================
+ * What we cover, shown as logos on the club banner and the link-preview image.
+ *
+ * ADDING ONE IS A SINGLE LINE. `icon` is a name from Simple Icons —
+ * https://simpleicons.org — lowercase with no spaces or dots, so "Node.js" is
+ * `nodedotjs` and "Azure" is `microsoftazure`. If a logo is missing the banner
+ * build will tell you the name it could not find.
+ *
+ * A note on the logos: these are other people's trademarks. Using them to say
+ * "we teach this" is normal and fine, but do not restyle them, recolour them,
+ * or imply the company sponsors the club.
+ */
+export const TOPICS: { icon: string; label: string }[] = [
+  { icon: 'github', label: 'GitHub' },
+  { icon: 'python', label: 'Python' },
+  { icon: 'microsoftazure', label: 'Azure' },
+  { icon: 'swift', label: 'Swift' },
+  { icon: 'javascript', label: 'JavaScript' },
+  { icon: 'discord', label: 'Bots' },
+];
+
+/**
+ * Sizes the printed banner is generated at. The club fair banners are tall and
+ * narrow, and meant to be read from several feet away.
+ *
+ * Everything is laid out at 50 units per inch, so a font-size of 100 is two
+ * inches tall on the finished print no matter which size you pick.
+ */
+export const BANNER_SIZES: { id: string; inchesWide: number; inchesTall: number }[] = [
+  // Portrait — the tall club-fair banners.
+  { id: '2x4', inchesWide: 24, inchesTall: 48 },
+  { id: '1.6x3', inchesWide: 19.2, inchesTall: 36 },
+
+  // Landscape — the same two sizes turned on their side, for a table front,
+  // a wall, or hanging above a booth. The layout is redrawn rather than
+  // stretched: a wide banner wants its content in a row, not a column.
+  { id: '4x2', inchesWide: 48, inchesTall: 24 },
+  { id: '3x1.6', inchesWide: 36, inchesTall: 19.2 },
+];
+
+/**
+ * Where the banner's QR code sends people.
+ *
+ * Not the plain home page: "?boot" always opens the terminal challenge, even
+ * for somebody who has been to the site before. Scanning a banner should drop
+ * you straight into the interesting bit — and the terminal has a Skip button,
+ * so nobody is trapped by it.
+ */
+export const QR_TARGET_QUERY = '?boot';
+
+/**
+ * BRAND ASSETS
+ * ============
+ * Everything the club needs besides the printed banners: a header for a Google
+ * Form, letterhead for real letters, a photocopiable flyer, a square avatar.
+ *
+ * ADDING ONE IS A SINGLE ENTRY. `kind` picks the layout, `theme` picks the
+ * palette, and `unit` says whether the numbers are pixels (for screens) or
+ * inches (for paper).
+ *
+ * A note on `theme: 'light'`: anything going near a printer is light. A
+ * full-bleed near-black page costs a fortune in toner, jams school copiers,
+ * and looks awful photocopied. Screens get the dark version; paper does not.
+ */
+export const BRAND_ASSETS: {
+  id: string;
+  label: string;
+  kind:
+    | 'form-banner'
+    | 'letterhead'
+    | 'flyer'
+    | 'avatar'
+    | 'slide-title'
+    | 'slide-content'
+    | 'signature';
+  theme: 'dark' | 'light';
+  width: number;
+  height: number;
+  unit: 'px' | 'in';
+}[] = [
+  {
+    id: 'form-banner',
+    label: 'Google Form / Classroom header',
+    kind: 'form-banner',
+    theme: 'dark',
+    width: 1600,
+    height: 400,
+    unit: 'px',
+  },
+  {
+    id: 'letterhead',
+    label: 'Letterhead, US Letter',
+    kind: 'letterhead',
+    theme: 'light',
+    width: 8.5,
+    height: 11,
+    unit: 'in',
+  },
+  {
+    id: 'flyer',
+    label: 'Photocopiable flyer, US Letter',
+    kind: 'flyer',
+    theme: 'light',
+    width: 8.5,
+    height: 11,
+    unit: 'in',
+  },
+  {
+    id: 'slide-title',
+    label: 'Slide background — title slide',
+    kind: 'slide-title',
+    theme: 'dark',
+    width: 1920,
+    height: 1080,
+    unit: 'px',
+  },
+  {
+    id: 'slide-content',
+    label: 'Slide background — content slides, deliberately empty',
+    kind: 'slide-content',
+    theme: 'dark',
+    width: 1920,
+    height: 1080,
+    unit: 'px',
+  },
+  {
+    /**
+     * A branding strip for an email signature.
+     *
+     * It carries NO name and NO email address, on purpose. Club officers are
+     * students, and anything generated here is published on a public website —
+     * a minor's name and address on the open web is exactly what this site
+     * does not do. Whoever is president types their own name in their mail
+     * client above this strip, where it stays private to their mail.
+     */
+    id: 'signature',
+    label: 'Email signature strip — no names, see README',
+    kind: 'signature',
+    theme: 'light',
+    width: 1200,
+    height: 280,
+    unit: 'px',
+  },
+  {
+    id: 'avatar',
+    label: 'Square avatar — Discord, Classroom, anywhere round',
+    kind: 'avatar',
+    theme: 'dark',
+    width: 512,
+    height: 512,
+    unit: 'px',
+  },
+];

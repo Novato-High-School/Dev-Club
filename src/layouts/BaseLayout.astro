@@ -42,6 +42,12 @@ const { title, description = SITE_DESCRIPTION } = Astro.props;
 // out which copy of a page is the real one.
 const canonical = new URL(Astro.url.pathname, Astro.site).toString();
 
+// The picture shown when somebody pastes a link to the site into Remind,
+// Discord or a text message. Generated from the club's own artwork — see
+// src/lib/banner.ts — so it never drifts from the rest of the branding.
+// It has to be an absolute URL: chat apps fetch it from their own servers.
+const ogImage = new URL(href('/og.png'), Astro.site).toString();
+
 // The overlay version of the intro only makes sense in these two modes.
 // In 'hero' mode the home page places the terminal inline instead.
 const showOverlayBoot = BOOT_MODE === 'skippable' || BOOT_MODE === 'hard';
@@ -63,7 +69,12 @@ const showOverlayBoot = BOOT_MODE === 'skippable' || BOOT_MODE === 'hard';
     <meta property="og:title" content={title} />
     <meta property="og:description" content={description} />
     <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={ogImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="while { Dev Club } — the student developer club at Novato High School" />
     <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:image" content={ogImage} />
 
     <meta name="theme-color" content="#0b0c0e" />
     <link rel="icon" href={href('/favicon.svg')} type="image/svg+xml" />
@@ -84,7 +95,8 @@ const showOverlayBoot = BOOT_MODE === 'skippable' || BOOT_MODE === 'hard';
           is:inline
           set:html={`
             try {
-              if (!localStorage.getItem(${JSON.stringify(BOOT_STORAGE_KEY)})) {
+              var asked = location.search.indexOf('boot') !== -1;
+              if (asked || !localStorage.getItem(${JSON.stringify(BOOT_STORAGE_KEY)})) {
                 document.documentElement.setAttribute('data-booting', '');
               }
             } catch (e) {

@@ -16,6 +16,24 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
+
+  # Rebuild once a day so the site keeps up with the calendar on its own.
+  #
+  # This is what makes the schedule automatic. The site is static files, so
+  # "Monday has passed, move it to the archive" only happens when something
+  # rebuilds. Without this the home page would still be advertising last
+  # week's meeting.
+  #
+  # 07:17 UTC is just after midnight in California. The odd minute is
+  # deliberate: scheduled jobs get delayed when everyone picks the top of the
+  # hour.
+  #
+  # NOTE: GitHub switches scheduled workflows off after 60 days with no
+  # activity in the repository. Over a long summer break this will quietly
+  # stop; any commit turns it back on.
+  schedule:
+    - cron: '17 7 * * *'
+
   workflow_dispatch:
 
 # Permissions this job needs: read the code, and publish to Pages.

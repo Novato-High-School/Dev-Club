@@ -287,9 +287,13 @@ export function startBootTerminal(options: BootOptions): void {
   const isOverlay = mode !== 'hero';
 
   // Someone who has already been through the intro should not have to do it
-  // again. The inline script in the page head made the same check to decide
-  // whether to hide the page, so the two must agree.
-  if (isOverlay && hasSeenBoot(storageKey)) {
+  // again — unless they asked for it. The QR code on the club banner points at
+  // "?boot", so scanning it always drops you into the terminal, whether or not
+  // you have been to the site before.
+  //
+  // The inline script in the page head makes the same check to decide whether
+  // to hide the page behind the overlay, so the two must agree.
+  if (isOverlay && !wantsBoot() && hasSeenBoot(storageKey)) {
     revealSite();
     return;
   }
@@ -790,6 +794,18 @@ function saveFoundEggs(found: Set<string>): void {
     localStorage.setItem(EGG_STORAGE_KEY, JSON.stringify([...found]));
   } catch {
     // Nothing to do.
+  }
+}
+
+/**
+ * Did the visitor explicitly ask for the intro? The banner's QR code adds
+ * "?boot" to the address so a scan always starts the challenge.
+ */
+export function wantsBoot(): boolean {
+  try {
+    return new URLSearchParams(location.search).has('boot');
+  } catch {
+    return false;
   }
 }
 
