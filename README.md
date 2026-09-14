@@ -45,9 +45,14 @@ why it costs nothing to run and why it collects no visitor data.
 
 ## The boot terminal
 
-First-time visitors get a fake command line that asks them to complete
-`while (curious) { ______(); }` before entering. Its behaviour is a single
-setting in [`src/config/site.ts`](src/config/site.ts):
+First-time visitors land on a locked terminal and have to break in. `help`
+offers a handful of innocuous-looking commands that all dead-end, except
+`boss-fight` — which summons a FIREWALL KNIGHT immune to every attack in the
+book and vulnerable only to being distracted. See
+[`src/scripts/boss-fight.ts`](src/scripts/boss-fight.ts).
+
+Its behaviour is a single setting in
+[`src/config/site.ts`](src/config/site.ts):
 
 ```ts
 export const BOOT_MODE: 'skippable' | 'hard' | 'hero' | 'off' = 'skippable';

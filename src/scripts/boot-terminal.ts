@@ -21,6 +21,13 @@
  * needs to change — the help text builds itself from that object.
  */
 
+import {
+  attack,
+  newFight,
+  KNIGHT_ART,
+  type FightState,
+} from './boss-fight';
+
 /** The settings BootTerminal.astro hands over when it starts this up. */
 export interface BootOptions {
   mode: 'skippable' | 'hard' | 'hero';
@@ -28,48 +35,50 @@ export interface BootOptions {
 }
 
 /** One line of text printed into the terminal, and how it should look. */
-type LineStyle = 'normal' | 'dim' | 'gold' | 'cyan' | 'success' | 'error';
+export type LineStyle = 'normal' | 'dim' | 'gold' | 'cyan' | 'success' | 'error';
 
 /**
- * THE COMMANDS
- * Each entry is what gets printed when somebody types that word. Keep the
- * wording short and friendly — a lot of readers here have never used a
- * terminal before, and the first impression matters more than the joke.
+ * THE COMMANDS `help` ADMITS TO
+ * =============================
+ * These are the ones a visitor is shown, and all but one of them are dead
+ * ends. That is deliberate. The terminal is a locked door, not a menu: the
+ * point is to poke at it until something gives.
+ *
+ * The dead ends are written to sound like a real server that is not going to
+ * co-operate, and one of them — `run` — is a nudge.
  */
 const COMMANDS: Record<string, { blurb: string; lines: [string, LineStyle][] }> = {
-  about: {
-    blurb: 'What is Dev Club?',
+  list: {
+    blurb: 'List files on the server',
     lines: [
-      ['Dev Club is the student developer club at Novato High School.', 'normal'],
-      ['We build real projects, learn real tools, and publish our work.', 'normal'],
+      ['Reading /srv/dev-club ...', 'dim'],
       ['', 'normal'],
-      ['No experience required. Genuinely. Most of us started at zero.', 'gold'],
+      ['You do not have permission to view these files.', 'error'],
     ],
   },
-  projects: {
-    blurb: "See what we're building",
+  ssh: {
+    blurb: 'Connect to another machine',
     lines: [
-      ['Currently in progress:', 'dim'],
-      ['  hornet-bot     a Discord bot for the club server', 'normal'],
-      ['  this-website   the site you are looking at', 'normal'],
-      ['  campus-map     unclaimed, wants a builder', 'normal'],
+      ['Scanning for open connections ...', 'dim'],
       ['', 'normal'],
-      ['Full details on the Build page.', 'dim'],
+      ['No connections visible from here.', 'error'],
     ],
   },
-  learn: {
-    blurb: 'Explore tools and workshops',
+  run: {
+    blurb: 'Run away',
     lines: [
-      ['Tracks you can start:', 'dim'],
-      ['  github   how teams share code          [start here]', 'normal'],
-      ['  python   your first working program    [start here]', 'normal'],
-      ['  azure    put it on the internet        [intermediate]', 'normal'],
-      ['  apple    build an app with Swift       [intermediate]', 'normal'],
+      ["There's nothing to run from.", 'normal'],
+      ['', 'normal'],
+      ['Yet.', 'dim'],
     ],
   },
-  join: {
-    blurb: 'Request access',
+  'boss-fight': {
+    blurb: 'Not sure why this is here',
     lines: [],
+  },
+  exit: {
+    blurb: 'Return to the prompt',
+    lines: [['Returning to the prompt.', 'dim']],
   },
   clear: {
     blurb: 'Clear the screen',
@@ -273,9 +282,6 @@ const THEMES: { name: string; value: string }[] = [
   { name: 'magenta', value: '#f472b6' },
 ];
 
-/** Answers accepted for the `while (curious) { ______(); }` challenge. */
-const ACCEPTED_ANSWERS = ['learn', 'build', 'create', 'experiment', 'code', 'explore'];
-
 /** Does this visitor prefer less animation? If so we print instantly. */
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -333,8 +339,8 @@ export function startBootTerminal(options: BootOptions): void {
   // politely when the terminal closes.
   const previouslyFocused = document.activeElement as HTMLElement | null;
 
-  /** Are we waiting for a normal command, or for the challenge answer? */
-  let awaitingChallenge = false;
+  /** Null when at the prompt; a fight in progress otherwise. */
+  let fight: FightState | null = null;
   /** Once someone is through, typing is finished. */
   let granted = false;
 
@@ -388,51 +394,74 @@ export function startBootTerminal(options: BootOptions): void {
     print('Available commands:', 'dim');
     print('');
     for (const [name, command] of Object.entries(COMMANDS)) {
-      print(`  ${name.padEnd(10)}${command.blurb}`);
+      print(`  ${name.padEnd(13)}${command.blurb}`);
     }
     print('');
-    // The nudge towards the hidden half. Deliberately vague.
-    print(`There are ${totalEggs} commands that are not on this list.`, 'dim');
-    print('Somebody left a map lying around. Try: ls -a', 'dim');
+    // Said plainly, because it is true, and because it is the nudge.
+    print('Most of these will not get you anywhere.', 'dim');
     print('');
   }
 
-  /** Sets up the fill-in-the-blank challenge. */
-  function startChallenge(): void {
-    awaitingChallenge = true;
-    print('Complete the program:', 'dim');
+  /** Opens the boss fight. */
+  async function startFight(): Promise<void> {
+    fight = newFight();
     print('');
-    print('  while (curious) {', 'cyan');
-    print('      ______();', 'gold');
-    print('  }', 'cyan');
-    print('');
-    input.setAttribute('aria-label', 'Fill in the blank in the program above');
-    input.placeholder = 'your answer';
+    await printSequence(
+      [
+        ['Searching for another way in ...', 'dim'],
+        ['', 'normal'],
+      ],
+      reducedMotion ? 0 : 220,
+    );
+    await printSequence(KNIGHT_ART, reducedMotion ? 0 : 55);
+    await printSequence(
+      [
+        ['', 'normal'],
+        ['A FIREWALL KNIGHT blocks the way.', 'gold'],
+        ['', 'normal'],
+        ['It is holding a flaming sword and it has clearly done', 'normal'],
+        ['this before.', 'normal'],
+        ['', 'normal'],
+        ['Type an attack. Or type run.', 'dim'],
+        ['', 'normal'],
+      ],
+      reducedMotion ? 0 : 120,
+    );
+    input.placeholder = 'your attack';
   }
 
-  /** Checks a challenge answer and either lets them in or nudges them. */
-  async function checkAnswer(raw: string): Promise<void> {
-    // Be generous: ignore capitals, spaces, brackets and semicolons, so that
-    // "Build();" and "build" both count. Nobody should fail on punctuation.
-    const cleaned = raw.toLowerCase().replace(/[^a-z]/g, '');
+  /** One exchange with the knight. */
+  async function fightTurn(raw: string): Promise<void> {
+    const state = fight!;
 
-    if (!ACCEPTED_ANSWERS.includes(cleaned)) {
+    // Leaving is always allowed. The knight does not chase.
+    if (/^(run|exit|flee|quit|back)$/i.test(raw.trim())) {
+      fight = null;
+      input.placeholder = 'type help';
       print('');
-      print(`"${raw}" is not it — but there is no wrong answer to feel bad about.`, 'error');
-      print('Try one of: learn, build, create, experiment', 'dim');
+      print('You back away. The knight lets you go.', 'normal');
+      print('It has seen people come back.', 'dim');
       print('');
       return;
     }
 
-    awaitingChallenge = false;
+    const { lines, won } = attack(raw, state);
+    print('');
+    await printSequence(lines, reducedMotion ? 0 : 70);
+
+    if (!won) {
+      print('');
+      return;
+    }
+
+    fight = null;
     granted = true;
     input.disabled = true;
 
     await printSequence(
       [
         ['', 'normal'],
-        ['  checking...', 'dim'],
-        ['', 'normal'],
+        ['  ✓ FIREWALL DOWN', 'success'],
         ['  ✓ ACCESS GRANTED', 'success'],
         ['', 'normal'],
         ['  Welcome to Dev Club.', 'normal'],
@@ -461,10 +490,9 @@ export function startBootTerminal(options: BootOptions): void {
 
     echo(text);
 
-    // While the challenge is on screen, anything typed is treated as an answer
-    // rather than as a command.
-    if (awaitingChallenge) {
-      await checkAnswer(text);
+    // Mid-fight, anything typed is an attack rather than a command.
+    if (fight) {
+      await fightTurn(text);
       return;
     }
 
@@ -479,9 +507,16 @@ export function startBootTerminal(options: BootOptions): void {
       return;
     }
 
-    if (name === 'join') {
+    if (name === 'boss-fight' || name === 'bossfight' || name === 'boss') {
+      return startFight();
+    }
+
+    // `exit` at the prompt just clears the line and says so.
+    if (name === 'exit') {
       print('');
-      return startChallenge();
+      print('Returning to the prompt.', 'dim');
+      print('');
+      return;
     }
 
     if (COMMANDS[name]) {
@@ -743,11 +778,11 @@ export function startBootTerminal(options: BootOptions): void {
     await printSequence(
       [
         ['DEV CLUB SYSTEM', 'gold'],
-        ['Status: waiting for input', 'dim'],
+        ['Status: locked', 'dim'],
         ['', 'normal'],
-        ['Type help to begin.', 'normal'],
+        ['You are not supposed to be here.', 'normal'],
         ['', 'normal'],
-        ['Not everything is in help.', 'dim'],
+        ['Type help.', 'normal'],
         ['', 'normal'],
       ],
       reducedMotion ? 0 : 220,
