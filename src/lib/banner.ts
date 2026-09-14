@@ -18,7 +18,7 @@
 import iconData from '@iconify-json/simple-icons/icons.json';
 
 import { TOPICS, CLUB, SITE_URL, SITE_NAME, BASE } from '../config/site';
-import { outline, outlineText, textWidth } from './fonts';
+import { outline, outlineText, textWidth, fitSize } from './fonts';
 
 /** The folder the site lives in, shown on the printed URL. */
 const BASE_PATH = (BASE as string) === '/' ? '' : BASE;
@@ -184,25 +184,38 @@ async function qrBlock(
     /** Width and height of the code. */
     side: number;
     captionSize: number;
+    /** Optional ceiling on how wide the caption may be. */
+    captionMaxWidth?: number;
     lines: [string, string];
     placement: 'above' | 'left';
     /** Gap between caption and code. */
     gap: number;
   },
 ): Promise<string> {
-  const { x, y, side, captionSize, lines, placement, gap } = options;
+  const { x, y, side, captionSize, captionMaxWidth, lines, placement, gap } = options;
   const pad = side * 0.08;
+
+  // The second line is usually the longer one, so it gets its own fitting.
+  const subSize = captionMaxWidth
+    ? Math.min(captionSize * 0.66, await fitSize(lines[1], captionMaxWidth, 'mono'))
+    : captionSize * 0.66;
+
+  // Stack upwards from the top of the white card, not from the code itself —
+  // the card's padding is what the second line was landing on top of.
+  const cardTop = y - pad;
+  const subBaseline = cardTop - gap * 0.5;
+  const mainBaseline = subBaseline - subSize * 1.5;
 
   const caption =
     placement === 'above'
       ? await Promise.all([
           outline(lines[0], COLOR.bone, {
-            x: x + side / 2, y: y - gap - captionSize * 0.85,
+            x: x + side / 2, y: mainBaseline,
             size: captionSize, family: 'display', weight: 700, anchor: 'middle',
           }),
           outline(lines[1], COLOR.muted, {
-            x: x + side / 2, y: y - gap + captionSize * 0.3,
-            size: captionSize * 0.66, family: 'mono', anchor: 'middle',
+            x: x + side / 2, y: subBaseline,
+            size: subSize, family: 'mono', anchor: 'middle',
           }),
         ])
       : await Promise.all([
@@ -212,7 +225,7 @@ async function qrBlock(
           }),
           outline(lines[1], COLOR.muted, {
             x: x - gap, y: y + side * 0.72,
-            size: captionSize * 0.62, family: 'mono', anchor: 'end',
+            size: subSize, family: 'mono', anchor: 'end',
           }),
         ]);
 
@@ -247,8 +260,14 @@ export async function posterSVG(
  * THE LANDSCAPE BANNER — wide and short. For a table front, a wall, or hanging
  * above a booth.
  *
- * The identity stacks in the middle, the topics run along one row, and the
- * meeting details and the QR code sit side by side underneath.
+ * The name is the whole point of this one, so it is sized to fill the width
+ * rather than set to some fraction of the canvas and hoped over. The QR sits
+ * in a column down the right, which is what buys the title its room. The topic
+ * logos run small along the bottom.
+ *
+ * Deliberately NO meeting time or room. A printed banner outlives a room
+ * assignment, and a banner advertising the wrong room is worse than one that
+ * sends people to the site to find out.
  */
 async function landscapeSVG(
   inchesWide: number,
@@ -258,83 +277,98 @@ async function landscapeSVG(
   const UNITS_PER_INCH = 50;
   const W = inchesWide * UNITS_PER_INCH;
   const H = inchesTall * UNITS_PER_INCH;
-  const mid = W / 2;
 
-  const topics = TOPICS;
-  const logoSize = H * 0.095;
-  // Spread the logos evenly across the middle 88% of the width.
-  const first = W * 0.06;
-  const span = W * 0.88;
-  const step = span / topics.length;
-  const topicsCy = H * 0.545;
+  // Two columns: the title takes the left, the QR gets a defined strip on the
+  // right. Everything in that strip is fitted to its width, because a caption
+  // centred on the QR is wider than the QR itself and will otherwise run off
+  // the edge of the banner.
+  const textLeft = W * 0.055;
+  const textRight = W * 0.71;
+  const available = textRight - textLeft;
 
-  // The bottom band: meeting details on the left, QR on the right. Both start
-  // below the topic labels, which is what the previous version got wrong.
-  const bandTop = H * 0.7;
-  const boxLeft = W * 0.06;
-  const boxWidth = W * 0.38;
-  const boxHeight = H * 0.22;
+  const colLeft = W * 0.745;
+  const colRight = W * 0.965;
+  const colWidth = colRight - colLeft;
+  const colCx = colLeft + colWidth / 2;
 
-  const qrSide = H * 0.22;
-  const qrX = W * 0.94 - qrSide;
+  const qrSide = Math.min(H * 0.34, colWidth * 0.82);
+  const qrX = colCx - qrSide / 2;
+
+  /**
+   * Size the two title lines to the width they have.
+   *
+   * "{ Dev Club }" is the longer line, so it sets the scale; "while" then takes
+   * a proportion of that. Measuring rather than guessing is what keeps both
+   * banner shapes working — 4x2 and 3x1.6 have different proportions, and a
+   * fraction-of-height size that fits one overflows the other.
+   */
+  const nameSize = Math.min(
+    await fitSize('{ Dev Club }', available, 'mono', 700),
+    H * 0.23,
+  );
+  const whileSize = nameSize * 1.05;
 
   const heading = await Promise.all([
     outline('$ ./join.sh', COLOR.muted, {
-      x: mid, y: H * 0.115, size: H * 0.045, family: 'mono', anchor: 'middle',
+      x: textLeft, y: H * 0.135, size: H * 0.05, family: 'mono',
+    }),
+    outline('while', COLOR.gold, {
+      x: textLeft, y: H * 0.385, size: whileSize, family: 'mono', weight: 700,
     }),
     outlineText(
       [
-        { text: 'while', fill: COLOR.gold },
-        { text: ' { ', fill: COLOR.muted },
+        { text: '{ ', fill: COLOR.muted },
         { text: 'Dev Club', fill: COLOR.bone },
         { text: ' }', fill: COLOR.muted },
       ],
-      { x: mid, y: H * 0.28, size: H * 0.14, family: 'mono', weight: 700, anchor: 'middle' },
+      { x: textLeft, y: H * 0.605, size: nameSize, family: 'mono', weight: 700 },
     ),
     outline('Build real things. Publish them in the open.', COLOR.bone, {
-      x: mid, y: H * 0.375, size: H * 0.05, family: 'display', weight: 700, anchor: 'middle',
+      x: textLeft, y: H * 0.71, size: H * 0.055, family: 'display', weight: 700,
     }),
     outline('No experience needed.', COLOR.gold, {
-      x: mid, y: H * 0.44, size: H * 0.045, family: 'display', anchor: 'middle',
+      x: textLeft, y: H * 0.785, size: H * 0.048, family: 'display',
     }),
   ]);
 
-  // Logo above label, centred in each slot — a row is too tight for the
-  // side-by-side arrangement the portrait version uses.
+  // Small logos along the bottom — present, but not competing with the name.
+  const topics = TOPICS;
+  const logoSize = H * 0.062;
+  const step = (textRight - textLeft) / topics.length;
+
   const topicMarks = await Promise.all(
     topics.map(async (topic, i) => {
-      const cx = first + step * (i + 0.5);
-      const cy = topicsCy;
-      const labelSize = logoSize * 0.44;
+      const cx = textLeft + step * (i + 0.5);
+      const cy = H * 0.895;
       const label = await outline(topic.label, COLOR.muted, {
-        x: cx, y: cy + logoSize * 0.95, size: labelSize, family: 'mono', anchor: 'middle',
+        x: cx, y: cy + logoSize * 1.05, size: logoSize * 0.42,
+        family: 'mono', anchor: 'middle',
       });
-      return `${logo(topic.icon, cx, cy, logoSize, COLOR.bone)}${label}`;
+      return `${logo(topic.icon, cx, cy, logoSize, COLOR.muted)}${label}`;
     }),
   );
 
-  const meeting = await Promise.all([
-    outline(CLUB.meetingDay, COLOR.gold, {
-      x: boxLeft + boxWidth / 2, y: bandTop + boxHeight * 0.45,
-      size: H * 0.08, family: 'mono', weight: 700, anchor: 'middle',
-    }),
-    outline(`Lunch \u00b7 Room ${CLUB.meetingRoom}`, COLOR.bone, {
-      x: boxLeft + boxWidth / 2, y: bandTop + boxHeight * 0.8,
-      size: H * 0.055, family: 'mono', anchor: 'middle',
-    }),
-    outline(`${SITE_URL.replace('https://', '')}${BASE_PATH}`, COLOR.muted, {
-      x: mid, y: H * 0.965, size: H * 0.035, family: 'mono', anchor: 'middle',
-    }),
-  ]);
+  // Fit each line of the QR column to the column, never wider.
+  const captionSize = Math.min(
+    H * 0.065,
+    await fitSize('Scan to break in', colWidth, 'display', 700),
+  );
+  const urlText = `${SITE_URL.replace('https://', '')}${BASE_PATH}`;
+  const urlSize = Math.min(H * 0.036, await fitSize(urlText, colWidth, 'mono'));
 
   const qrArt = await qrBlock(qr, {
     x: qrX,
-    y: bandTop,
+    y: H * 0.32,
     side: qrSide,
-    captionSize: H * 0.055,
-    lines: ['Scan to break in', '14 hidden commands'],
-    placement: 'left',
-    gap: W * 0.015,
+    captionSize,
+    captionMaxWidth: colWidth,
+    lines: ['Scan to break in', 'find the hidden commands'],
+    placement: 'above',
+    gap: H * 0.028,
+  });
+
+  const url = await outline(urlText, COLOR.muted, {
+    x: colCx, y: H * 0.32 + qrSide + H * 0.075, size: urlSize, family: 'mono', anchor: 'middle',
   });
 
   return `<svg xmlns="http://www.w3.org/2000/svg"
@@ -349,10 +383,8 @@ async function landscapeSVG(
   ${heading.join('\n  ')}
   ${topicMarks.join('\n  ')}
 
-  <rect x="${boxLeft}" y="${bandTop}" width="${boxWidth}" height="${boxHeight}" rx="${H * 0.03}" fill="${COLOR.surface}" stroke="${COLOR.edge}" stroke-width="${H * 0.006}"/>
-  ${meeting.join('\n  ')}
-
   ${qrArt}
+  ${url}
 </svg>`;
 }
 
@@ -446,7 +478,7 @@ async function portraitSVG(
     y: H * 0.845,
     side: qrSide,
     captionSize: W * 0.045,
-    lines: ['Scan to break in', '14 hidden commands. Skip anytime.'],
+    lines: ['Scan to break in', 'find the hidden commands'],
     placement: 'above',
     gap: H * 0.015,
   });

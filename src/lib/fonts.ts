@@ -211,6 +211,24 @@ export async function outline(
   return outlineText([{ text, fill }], options);
 }
 
+/**
+ * The font size that makes a line exactly `maxWidth` wide.
+ *
+ * Text width is proportional to size, so we measure once at 100 and scale. This
+ * is how the landscape banner keeps its title as large as it can possibly be
+ * while still fitting — rather than picking a size as a fraction of the canvas
+ * and hoping, which silently overflows as soon as the proportions change.
+ */
+export async function fitSize(
+  text: string,
+  maxWidth: number,
+  family: 'display' | 'mono',
+  weight: 400 | 700 = 400,
+): Promise<number> {
+  const at100 = await textWidth(text, 100, family, weight);
+  return (maxWidth * 100) / at100;
+}
+
 /** How wide a line will be, for laying things out beside it. */
 export async function textWidth(
   text: string,

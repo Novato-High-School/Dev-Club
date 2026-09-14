@@ -77,9 +77,18 @@ same palette and fonts as the website, so nothing can drift out of sync.
 | `/banner/4x2.svg` · `.png` | 4ft × 2ft, landscape |
 | `/banner/3x1.6.svg` · `.png` | 3ft × 1.6ft, landscape |
 
-The landscape versions are laid out separately rather than stretched — a wide
-banner wants its content in a row. Sizes live in `BANNER_SIZES` in the config;
-anything wider than it is tall gets the landscape treatment automatically.
+The landscape versions are laid out separately rather than stretched. They put
+the club name first — sized to fill the width, measured rather than guessed, so
+it fits whatever proportions the banner has — with the QR in a column down the
+right and the topic logos small along the bottom.
+
+**The landscape banners deliberately carry no meeting time or room.** A printed
+banner outlives a room assignment, and one advertising the wrong room is worse
+than one that sends people to the site to find out. The portrait versions keep
+the meeting box, since they are cheaper to reprint.
+
+Sizes live in `BANNER_SIZES` in the config; anything wider than it is tall gets
+the landscape treatment automatically.
 
 Send a print shop the **.svg** if they will take it — it is vector, so it stays
 sharp at any size. All of the lettering is converted to outlines, which is the
@@ -107,8 +116,11 @@ points at `?boot`, which opens the terminal challenge even for somebody who has
 been to the site before — so scanning a banner drops you straight into the
 interesting part rather than a description of it.
 
+The caption reads **"Scan to break in / find the hidden commands"**. No count,
+on purpose: the number would go stale the first time somebody adds an egg, and
+not saying is more inviting anyway.
+
 The terminal keeps its Skip button, so it is an invitation, not a toll gate.
-The caption on the banner says as much.
 
 **On the logos:** these are other companies' trademarks. Using them to say "we
 teach this" is normal, but do not recolour or restyle them, and do not imply
