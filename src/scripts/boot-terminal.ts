@@ -21,6 +21,13 @@
  * needs to change — the help text builds itself from that object.
  */
 
+import {
+  attack,
+  newFight,
+  KNIGHT_ART,
+  type FightState,
+} from './boss-fight';
+
 /** The settings BootTerminal.astro hands over when it starts this up. */
 export interface BootOptions {
   mode: 'skippable' | 'hard' | 'hero';
@@ -28,48 +35,50 @@ export interface BootOptions {
 }
 
 /** One line of text printed into the terminal, and how it should look. */
-type LineStyle = 'normal' | 'dim' | 'gold' | 'cyan' | 'success' | 'error';
+export type LineStyle = 'normal' | 'dim' | 'gold' | 'cyan' | 'success' | 'error';
 
 /**
- * THE COMMANDS
- * Each entry is what gets printed when somebody types that word. Keep the
- * wording short and friendly — a lot of readers here have never used a
- * terminal before, and the first impression matters more than the joke.
+ * THE COMMANDS `help` ADMITS TO
+ * =============================
+ * These are the ones a visitor is shown, and all but one of them are dead
+ * ends. That is deliberate. The terminal is a locked door, not a menu: the
+ * point is to poke at it until something gives.
+ *
+ * The dead ends are written to sound like a real server that is not going to
+ * co-operate, and one of them — `run` — is a nudge.
  */
 const COMMANDS: Record<string, { blurb: string; lines: [string, LineStyle][] }> = {
-  about: {
-    blurb: 'What is Dev Club?',
+  list: {
+    blurb: 'List files on the server',
     lines: [
-      ['Dev Club is the student developer club at Novato High School.', 'normal'],
-      ['We build real projects, learn real tools, and publish our work.', 'normal'],
+      ['Reading /srv/dev-club ...', 'dim'],
       ['', 'normal'],
-      ['No experience required. Genuinely. Most of us started at zero.', 'gold'],
+      ['You do not have permission to view these files.', 'error'],
     ],
   },
-  projects: {
-    blurb: "See what we're building",
+  ssh: {
+    blurb: 'Connect to another machine',
     lines: [
-      ['Currently in progress:', 'dim'],
-      ['  hornet-bot     a Discord bot for the club server', 'normal'],
-      ['  this-website   the site you are looking at', 'normal'],
-      ['  campus-map     unclaimed, wants a builder', 'normal'],
+      ['Scanning for open connections ...', 'dim'],
       ['', 'normal'],
-      ['Full details on the Build page.', 'dim'],
+      ['No connections visible from here.', 'error'],
     ],
   },
-  learn: {
-    blurb: 'Explore tools and workshops',
+  run: {
+    blurb: 'Run away',
     lines: [
-      ['Tracks you can start:', 'dim'],
-      ['  github   how teams share code          [start here]', 'normal'],
-      ['  python   your first working program    [start here]', 'normal'],
-      ['  azure    put it on the internet        [intermediate]', 'normal'],
-      ['  apple    build an app with Swift       [intermediate]', 'normal'],
+      ["There's nothing to run from.", 'normal'],
+      ['', 'normal'],
+      ['Yet.', 'dim'],
     ],
   },
-  join: {
-    blurb: 'Request access',
+  'boss-fight': {
+    blurb: 'Not sure why this is here',
     lines: [],
+  },
+  exit: {
+    blurb: 'Return to the prompt',
+    lines: [['Returning to the prompt.', 'dim']],
   },
   clear: {
     blurb: 'Clear the screen',
@@ -273,9 +282,6 @@ const THEMES: { name: string; value: string }[] = [
   { name: 'magenta', value: '#f472b6' },
 ];
 
-/** Answers accepted for the `while (curious) { ______(); }` challenge. */
-const ACCEPTED_ANSWERS = ['learn', 'build', 'create', 'experiment', 'code', 'explore'];
-
 /** Does this visitor prefer less animation? If so we print instantly. */
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -287,9 +293,13 @@ export function startBootTerminal(options: BootOptions): void {
   const isOverlay = mode !== 'hero';
 
   // Someone who has already been through the intro should not have to do it
-  // again. The inline script in the page head made the same check to decide
-  // whether to hide the page, so the two must agree.
-  if (isOverlay && hasSeenBoot(storageKey)) {
+  // again — unless they asked for it. The QR code on the club banner points at
+  // "?boot", so scanning it always drops you into the terminal, whether or not
+  // you have been to the site before.
+  //
+  // The inline script in the page head makes the same check to decide whether
+  // to hide the page behind the overlay, so the two must agree.
+  if (isOverlay && !wantsBoot() && hasSeenBoot(storageKey)) {
     revealSite();
     return;
   }
@@ -329,8 +339,8 @@ export function startBootTerminal(options: BootOptions): void {
   // politely when the terminal closes.
   const previouslyFocused = document.activeElement as HTMLElement | null;
 
-  /** Are we waiting for a normal command, or for the challenge answer? */
-  let awaitingChallenge = false;
+  /** Null when at the prompt; a fight in progress otherwise. */
+  let fight: FightState | null = null;
   /** Once someone is through, typing is finished. */
   let granted = false;
 
@@ -384,51 +394,94 @@ export function startBootTerminal(options: BootOptions): void {
     print('Available commands:', 'dim');
     print('');
     for (const [name, command] of Object.entries(COMMANDS)) {
-      print(`  ${name.padEnd(10)}${command.blurb}`);
+      print(`  ${name.padEnd(13)}${command.blurb}`);
     }
     print('');
-    // The nudge towards the hidden half. Deliberately vague.
-    print(`There are ${totalEggs} commands that are not on this list.`, 'dim');
-    print('Somebody left a map lying around. Try: ls -a', 'dim');
+    // Said plainly, because it is true, and because it is the nudge.
+    print('Most of these will not get you anywhere.', 'dim');
     print('');
   }
 
-  /** Sets up the fill-in-the-blank challenge. */
-  function startChallenge(): void {
-    awaitingChallenge = true;
-    print('Complete the program:', 'dim');
-    print('');
-    print('  while (curious) {', 'cyan');
-    print('      ______();', 'gold');
-    print('  }', 'cyan');
-    print('');
-    input.setAttribute('aria-label', 'Fill in the blank in the program above');
-    input.placeholder = 'your answer';
+  /** Opens the boss fight. */
+  async function startFight(): Promise<void> {
+    fight = newFight();
+
+    // Wipe the screen first. The terminal shows about eighteen lines, and the
+    // knight plus its introduction is most of that — without clearing, the
+    // art scrolls off the top before anybody has seen it.
+    screen.replaceChildren();
+
+    await printSequence(KNIGHT_ART, reducedMotion ? 0 : 55);
+    await printSequence(
+      [
+        ['', 'normal'],
+        ['A FIREWALL KNIGHT blocks the way.', 'gold'],
+        ['', 'normal'],
+        ['Type an attack. Or type run.', 'dim'],
+      ],
+      reducedMotion ? 0 : 120,
+    );
+
+    // printSequence keeps the view pinned to the newest line; put it back to
+    // the top so the whole knight is on screen when the fight begins.
+    screen.scrollTop = 0;
+
+    input.placeholder = 'your attack';
   }
 
-  /** Checks a challenge answer and either lets them in or nudges them. */
-  async function checkAnswer(raw: string): Promise<void> {
-    // Be generous: ignore capitals, spaces, brackets and semicolons, so that
-    // "Build();" and "build" both count. Nobody should fail on punctuation.
-    const cleaned = raw.toLowerCase().replace(/[^a-z]/g, '');
+  /** One exchange with the knight. */
+  async function fightTurn(raw: string): Promise<void> {
+    const state = fight!;
 
-    if (!ACCEPTED_ANSWERS.includes(cleaned)) {
+    // Leaving is always allowed. The knight does not chase.
+    if (/^(run|exit|flee|quit|back)$/i.test(raw.trim())) {
+      fight = null;
+      input.placeholder = 'type help';
       print('');
-      print(`"${raw}" is not it — but there is no wrong answer to feel bad about.`, 'error');
-      print('Try one of: learn, build, create, experiment', 'dim');
+      print('You back away. The knight lets you go.', 'normal');
+      print('It has seen people come back.', 'dim');
       print('');
       return;
     }
 
-    awaitingChallenge = false;
+    // Reading the notes mid-standoff is allowed, and does not count as a
+    // failed attack. This is the safety net, and being stuck in the fight is
+    // exactly when somebody needs it.
+    if (/^(cat +)?\.?secrets$/i.test(raw.trim())) {
+      print('');
+      print('You check the notes. The knight waits, politely.', 'dim');
+      await printSecrets();
+      return;
+    }
+
+    // Asking for help mid-fight gets fight help, not the server's menu.
+    if (/^help$/i.test(raw.trim())) {
+      print('');
+      print('Type an attack. Anything you like.', 'normal');
+      print('Type run to back out.', 'dim');
+      print('');
+      print('The knight waits. It is in no hurry at all.', 'dim');
+      print('');
+      return;
+    }
+
+    const { lines, won } = attack(raw, state);
+    print('');
+    await printSequence(lines, reducedMotion ? 0 : 70);
+
+    if (!won) {
+      print('');
+      return;
+    }
+
+    fight = null;
     granted = true;
     input.disabled = true;
 
     await printSequence(
       [
         ['', 'normal'],
-        ['  checking...', 'dim'],
-        ['', 'normal'],
+        ['  ✓ FIREWALL DOWN', 'success'],
         ['  ✓ ACCESS GRANTED', 'success'],
         ['', 'normal'],
         ['  Welcome to Dev Club.', 'normal'],
@@ -447,7 +500,7 @@ export function startBootTerminal(options: BootOptions): void {
     enter.textContent = '[ Enter the site ]';
     enter.addEventListener('click', () => finish());
     form.parentElement!.appendChild(enter);
-    enter.focus();
+    enter.focus({ preventScroll: true });
   }
 
   /** Runs one typed command. */
@@ -457,10 +510,9 @@ export function startBootTerminal(options: BootOptions): void {
 
     echo(text);
 
-    // While the challenge is on screen, anything typed is treated as an answer
-    // rather than as a command.
-    if (awaitingChallenge) {
-      await checkAnswer(text);
+    // Mid-fight, anything typed is an attack rather than a command.
+    if (fight) {
+      await fightTurn(text);
       return;
     }
 
@@ -475,9 +527,16 @@ export function startBootTerminal(options: BootOptions): void {
       return;
     }
 
-    if (name === 'join') {
+    if (name === 'boss-fight' || name === 'bossfight' || name === 'boss') {
+      return startFight();
+    }
+
+    // `exit` at the prompt just clears the line and says so.
+    if (name === 'exit') {
       print('');
-      return startChallenge();
+      print('Returning to the prompt.', 'dim');
+      print('');
+      return;
     }
 
     if (COMMANDS[name]) {
@@ -513,7 +572,6 @@ export function startBootTerminal(options: BootOptions): void {
         await printSequence(egg.lines, reducedMotion ? 0 : 60);
       }
 
-      recordEgg(eggName);
       print('');
       return;
     }
@@ -543,46 +601,43 @@ export function startBootTerminal(options: BootOptions): void {
   // Easter eggs
   // ---------------------------------------------------------------------
 
-  /** Every hidden command this browser has found so far. */
-  const foundEggs = loadFoundEggs();
-  const totalEggs = Object.keys(EASTER_EGGS).length;
-
-  /** Notes that an egg has been found, and says so the first time. */
-  function recordEgg(eggName: string): void {
-    if (foundEggs.has(eggName)) return;
-    foundEggs.add(eggName);
-    saveFoundEggs(foundEggs);
-    print('');
-    print(`[ found ${foundEggs.size} of ${totalEggs} hidden commands ]`, 'success');
-  }
-
   /**
-   * The treasure map. Shows what has been found, and a clue for what has not,
-   * so hunting is a trail rather than a guessing game.
+   * `.secrets` — notes left behind by whoever tried this before you.
+   *
+   * This used to be a checklist of hidden commands with a "found 3 of 14"
+   * counter, which was a second game sitting beside the first one and broke
+   * the fiction every time you opened it. It is now part of the story: an
+   * abandoned scratchpad that points at the fight and says, without saying,
+   * that the way through is not a weapon.
+   *
+   * It is also the safety net. Anyone who cannot work out what to do can read
+   * this and get a push in the right direction.
    */
   async function printSecrets(): Promise<void> {
-    print('');
-    print('# .secrets', 'dim');
-    print('');
-    print(`You have found ${foundEggs.size} of ${totalEggs} hidden commands.`, 'gold');
-    print('');
-
-    for (const [eggName, egg] of Object.entries(EASTER_EGGS)) {
-      if (foundEggs.has(eggName)) {
-        print(`  [x] ${eggName}`, 'success');
-      } else {
-        print(`  [ ] ??? — ${egg.hint}`, 'dim');
-      }
-    }
-
-    print('');
-    if (foundEggs.size === totalEggs) {
-      print('All of them. Genuinely well done.', 'success');
-      print('Now go add one of your own — src/scripts/boot-terminal.ts', 'gold');
-    } else {
-      print('Keep typing things. That is the whole game.', 'dim');
-    }
-    print('');
+    await printSequence(
+      [
+        ['', 'normal'],
+        ['# .secrets', 'dim'],
+        ['# left by whoever was here before you', 'dim'],
+        ['', 'normal'],
+        ['Tried everything sharp. Everything on fire.', 'normal'],
+        ['Everything that counts as a damage type.', 'normal'],
+        ['None of it works. Do not waste your afternoon on it', 'normal'],
+        ['like I did.', 'normal'],
+        ['', 'normal'],
+        ['But it flinches.', 'gold'],
+        ['', 'normal'],
+        ['I have watched it flinch four separate times and I still', 'normal'],
+        ['do not know at what. Whatever gets through that armour', 'normal'],
+        ['is not a weapon.', 'normal'],
+        ['', 'normal'],
+        ['Keep it talking. It cannot help itself.', 'cyan'],
+        ['', 'normal'],
+        ['I ran out of lunch break. You might not.', 'dim'],
+        ['', 'normal'],
+      ],
+      reducedMotion ? 0 : 60,
+    );
   }
 
   /** A short burst of falling characters, because of course. */
@@ -631,8 +686,23 @@ export function startBootTerminal(options: BootOptions): void {
       root.remove();
       revealSite();
       document.removeEventListener('keydown', onKeydown, true);
-      // Put keyboard focus somewhere sensible in the real page.
-      (previouslyFocused ?? document.querySelector<HTMLElement>('a[href]'))?.focus();
+
+      /**
+       * Start at the top of the page.
+       *
+       * The overlay hides the site rather than replacing it, so the page
+       * underneath can already be scrolled — most often because the browser
+       * restored the position from a previous visit when this one loaded, which
+       * you cannot see while the terminal is covering it. Entering the site
+       * then dropped you into the middle of the page instead of at the title.
+       */
+      window.scrollTo(0, 0);
+
+      // preventScroll matters: focusing an element scrolls it into view, which
+      // would undo the line above.
+      (previouslyFocused ?? document.querySelector<HTMLElement>('a[href]'))?.focus({
+        preventScroll: true,
+      });
     };
     // Let the fade finish first, unless the visitor asked for less motion.
     if (reducedMotion) removeIt();
@@ -700,7 +770,6 @@ export function startBootTerminal(options: BootOptions): void {
       void (async () => {
         print('');
         await printSequence(EASTER_EGGS.konami.lines, reducedMotion ? 0 : 90);
-        recordEgg('konami');
         print('');
       })();
     }
@@ -739,11 +808,11 @@ export function startBootTerminal(options: BootOptions): void {
     await printSequence(
       [
         ['DEV CLUB SYSTEM', 'gold'],
-        ['Status: waiting for input', 'dim'],
+        ['Status: locked', 'dim'],
         ['', 'normal'],
-        ['Type help to begin.', 'normal'],
+        ['You are not supposed to be here.', 'normal'],
         ['', 'normal'],
-        ['Not everything is in help.', 'dim'],
+        ['Type help.', 'normal'],
         ['', 'normal'],
       ],
       reducedMotion ? 0 : 220,
@@ -768,28 +837,15 @@ function revealSite(): void {
 }
 
 /**
- * WHICH EASTER EGGS HAS THIS PERSON FOUND?
- * Kept in the browser so the count survives reloads. It is only ever a list of
- * command names — nothing about who the visitor is.
+ * Did the visitor explicitly ask for the intro? The banner's QR code adds
+ * "?boot" to the address so a scan always starts the break-in, whether or not
+ * they have been to the site before.
  */
-const EGG_STORAGE_KEY = 'devclub.eggs.v1';
-
-function loadFoundEggs(): Set<string> {
+export function wantsBoot(): boolean {
   try {
-    const raw = localStorage.getItem(EGG_STORAGE_KEY);
-    return new Set(raw ? (JSON.parse(raw) as string[]) : []);
+    return new URLSearchParams(location.search).has('boot');
   } catch {
-    // Storage blocked (private browsing). The eggs still work, they just will
-    // not be remembered, which is a perfectly fine way to fail.
-    return new Set();
-  }
-}
-
-function saveFoundEggs(found: Set<string>): void {
-  try {
-    localStorage.setItem(EGG_STORAGE_KEY, JSON.stringify([...found]));
-  } catch {
-    // Nothing to do.
+    return false;
   }
 }
 

@@ -1,0 +1,270 @@
+---
+/**
+ * ONE MEETING
+ * ===========
+ * A page per meeting, at a permanent address like /meetings/2026-09-14.
+ *
+ * The address never changes, which is what makes it safe to paste into a
+ * Remind message or a Discord post: the link keeps working after the meeting,
+ * and turns into the write-up.
+ *
+ * Pages are built for every scheduled date, not just ones with files, so the
+ * link exists before anybody has written anything.
+ */
+
+import { render } from 'astro:content';
+import { Icon } from 'astro-icon/components';
+
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import HexGrid from '../../components/HexGrid.astro';
+import Prompt from '../../components/Prompt.astro';
+import { href } from '../../lib/href';
+import { getMeetings, type Meeting } from '../../lib/meetings';
+import { CLUB, SITE_URL } from '../../config/site';
+
+export async function getStaticPaths() {
+  const { upcoming, past } = await getMeetings();
+  return [...upcoming, ...past].map((meeting) => ({
+    params: { id: meeting.id },
+    props: { meeting },
+  }));
+}
+
+const { meeting } = Astro.props as { meeting: Meeting };
+
+// The write-up, if somebody has written one.
+const Notes = meeting.entry ? (await render(meeting.entry)).Content : null;
+
+const dateFormat = new Intl.DateTimeFormat('en-US', {
+  weekday: 'long',
+  month: 'long',
+  day: 'numeric',
+  year: 'numeric',
+  timeZone: 'UTC',
+});
+
+const isPast = meeting.id < new Date().toISOString().slice(0, 10);
+
+// Where to go to write this one up, straight into GitHub's editor.
+const editUrl = meeting.entry
+  ? `${CLUB.githubOrg}/Dev-Club/edit/main/src/content/meetings/${meeting.id}.md`
+  : `${CLUB.githubOrg}/Dev-Club/new/main/src/content/meetings?filename=${meeting.id}.md`;
+
+/**
+ * A ready-made announcement, for pasting into Remind or Discord. We do not
+ * integrate with Remind — it would need a server we do not have, and a person
+ * still writes the message either way — so the site just makes the message
+ * trivial to produce.
+ */
+const announcement = [
+  `Dev Club — ${dateFormat.format(meeting.date)}, ${meeting.time}, ${meeting.where}.`,
+  meeting.agenda.length ? ` We're doing: ${meeting.agenda[0].toLowerCase()}.` : '',
+  ` Details: ${SITE_URL}${href(`/meetings/${meeting.id}`)}`,
+].join('');
+---
+
+<BaseLayout
+  title={`${dateFormat.format(meeting.date)} — ${meeting.title}`}
+  description={meeting.agenda[0] ?? `Dev Club meeting on ${dateFormat.format(meeting.date)}.`}
+>
+  <section class="relative overflow-hidden border-b border-edge">
+    <HexGrid class="opacity-50" />
+    <div class="relative mx-auto max-w-3xl px-5 py-14">
+      <a
+        href={href('/meetings')}
+        class="inline-flex items-center gap-1.5 font-mono text-xs text-muted transition-colors hover:text-gold"
+      >
+        <Icon name="lucide:arrow-left" class="h-3.5 w-3.5" />
+        all meetings
+      </a>
+
+      <Prompt command={`cat meetings/${meeting.id}`} class="mt-5" />
+      <h1 class="mt-3 font-mono text-3xl font-bold tracking-tight">
+        {meeting.canceled ? 'No meeting' : meeting.title}
+      </h1>
+      <p class="mt-3 font-mono text-sm text-gold">
+        {dateFormat.format(meeting.date)}
+      </p>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-3xl px-5 py-12">
+    {
+      meeting.canceled ? (
+        <div class="rounded-lg border border-edge bg-surface p-6">
+          <p class="text-bone">
+            No meeting this week{meeting.canceledReason ? ` — ${meeting.canceledReason}` : ''}.
+          </p>
+          <p class="mt-2 text-sm text-muted">
+            Check the <a href={href('/meetings')} class="text-cyan hover:text-gold">meetings page</a>
+            for the next one.
+          </p>
+        </div>
+      ) : (
+        <div class="rounded-lg border border-edge bg-surface p-6">
+          <dl class="grid gap-4 font-mono text-sm sm:grid-cols-2">
+            <div>
+              <dt class="text-muted">time</dt>
+              <dd class="mt-1 text-gold">{meeting.time}</dd>
+            </div>
+            <div>
+              <dt class="text-muted">where</dt>
+              <dd class="mt-1 text-gold">{meeting.where}</dd>
+            </div>
+          </dl>
+
+          {meeting.unusual && (
+            <p class="mt-5 flex gap-2.5 rounded border border-gold/40 bg-gold/10 p-3 text-sm text-bone">
+              <Icon name="lucide:triangle-alert" class="mt-0.5 h-4 w-4 shrink-0 text-gold" />
+              <span>
+                <strong class="font-semibold">Not the usual time or place</strong> —
+                check it before you head over.
+              </span>
+            </p>
+          )}
+        </div>
+      )
+    }
+
+    {/* The guest, when there is one. */}
+    {
+      meeting.speaker && (
+        <div class="mt-6 rounded-lg border border-cyan/30 bg-surface p-6">
+          <h2 class="font-mono text-xs uppercase tracking-wide text-cyan">
+            Guest speaker
+          </h2>
+          <p class="mt-3 font-mono text-lg font-semibold text-bone">
+            {meeting.speaker.name}
+          </p>
+          <p class="mt-1 font-mono text-sm text-gold">{meeting.speaker.role}</p>
+          {meeting.speaker.topic && (
+            <p class="mt-3 text-sm text-muted">{meeting.speaker.topic}</p>
+          )}
+          {meeting.speaker.link && (
+            <a
+              href={meeting.speaker.link}
+              class="mt-4 inline-flex items-center gap-1.5 font-mono text-xs text-cyan transition-colors hover:text-gold"
+            >
+              <Icon name="lucide:external-link" class="h-3.5 w-3.5" />
+              more about their work
+            </a>
+          )}
+        </div>
+      )
+    }
+
+    {/* The plan. */}
+    {
+      meeting.agenda.length > 0 && (
+        <div class="mt-6">
+          <h2 class="font-mono text-xl font-semibold">
+            {isPast ? 'The plan was' : 'What we are doing'}
+          </h2>
+          <ul class="mt-4 space-y-2">
+            {meeting.agenda.map((item) => (
+              <li class="flex gap-2.5 text-sm leading-relaxed text-muted">
+                <span class="text-gold" aria-hidden="true">—</span>
+                <span>{item}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )
+    }
+
+    {/* Pages we will open during the meeting. */}
+    {
+      meeting.links.length > 0 && (
+        <div class="mt-6">
+          <h2 class="font-mono text-xs uppercase tracking-wide text-muted">
+            What we will use
+          </h2>
+          <div class="mt-3 flex flex-wrap gap-2">
+            {meeting.links.map((link) => (
+              <a
+                href={href(link.url)}
+                class="rounded border border-edge px-3 py-1.5 font-mono text-xs text-cyan transition-colors hover:border-gold hover:text-gold"
+              >
+                {link.label}
+              </a>
+            ))}
+          </div>
+        </div>
+      )
+    }
+
+    {/* The write-up, or a nudge to write one. */}
+    {
+      isPast && !meeting.canceled && (
+        <div class="mt-10 border-t border-edge pt-8">
+          <h2 class="font-mono text-xl font-semibold">What happened</h2>
+          {meeting.hasNotes && Notes ? (
+            <div class="md-content mt-4 space-y-4 text-sm leading-relaxed text-muted">
+              <Notes />
+            </div>
+          ) : (
+            <div class="mt-4 rounded-lg border border-dashed border-edge p-5">
+              <p class="text-sm leading-relaxed text-muted">
+                Nobody has written this one up yet. Three sentences is plenty:
+                what did people work on, and did anything get finished?
+              </p>
+              <a
+                href={editUrl}
+                class="mt-4 inline-flex items-center gap-2 rounded border border-gold px-4 py-2 font-mono text-xs text-gold transition-colors hover:bg-gold hover:text-ink"
+              >
+                <Icon name="lucide:pencil" class="h-3.5 w-3.5" />
+                Add notes
+              </a>
+            </div>
+          )}
+        </div>
+      )
+    }
+
+    {/* Copy-ready announcement, so posting to Remind is one paste. */}
+    {
+      !isPast && !meeting.canceled && (
+        <div class="mt-10 border-t border-edge pt-8">
+          <h2 class="font-mono text-xs uppercase tracking-wide text-muted">
+            Announcement text
+          </h2>
+          <p
+            id="announcement"
+            class="mt-3 rounded-lg border border-edge bg-surface p-4 text-sm leading-relaxed text-muted"
+          >
+            {announcement}
+          </p>
+          <button
+            type="button"
+            id="copy-announcement"
+            hidden
+            class="mt-3 inline-flex items-center gap-2 rounded border border-edge px-4 py-2 font-mono text-xs text-bone transition-colors hover:border-gold hover:text-gold"
+          >
+            <Icon name="lucide:copy" class="h-3.5 w-3.5" />
+            Copy for Remind
+          </button>
+        </div>
+      )
+    }
+  </section>
+</BaseLayout>
+
+<script>
+  // Progressive enhancement: the button stays hidden unless JavaScript can
+  // actually do the copying, so nobody clicks something that does nothing.
+  const button = document.getElementById('copy-announcement');
+  const text = document.getElementById('announcement')?.textContent?.trim();
+
+  if (button && text && navigator.clipboard) {
+    button.hidden = false;
+    button.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(text);
+        button.textContent = 'Copied';
+        setTimeout(() => (button.textContent = 'Copy for Remind'), 2000);
+      } catch {
+        button.textContent = 'Press Ctrl+C to copy';
+      }
+    });
+  }
+</script>

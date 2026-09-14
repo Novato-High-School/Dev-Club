@@ -98,27 +98,122 @@ What is the next thing you want to get running?
 
 ---
 
-## Add a meeting recap or announcement
+## Meetings
 
-Same steps, but in [`src/content/updates/`](src/content/updates/):
+**You do not need a file for an ordinary meeting.** The site works out the
+schedule by itself: Mondays at lunch in 3202, skipping holidays and school
+breaks. A normal week appears on the site with nobody touching anything.
+
+Add a file when there is something to say. Files live in
+[`src/content/meetings/`](src/content/meetings/) and **are named by date** —
+`2026-09-14.md`. There is no `date:` field; the filename is the date, so the
+two can never disagree.
+
+### Before a meeting — the plan
 
 ```markdown
 ---
-title: Recap — the week we finally fixed the bot
-date: 2026-09-18
-kind: recap
+title: Bot commands and first pull requests
+agenda:
+  - Set up GitHub accounts
+  - Open your first pull request
+links:
+  - label: Start here
+    url: /start
+  - label: GitHub track
+    url: /learn/github
 ---
-
-What happened at the meeting, in a few sentences. What did people work on?
-Did anything get finished? What is next?
 ```
 
-`kind` is one of:
+`links` are the pages you will actually open during the meeting, so people can
+follow along from the meeting page.
 
-- `meeting` — an upcoming meeting. The soonest one becomes the "next meeting"
-  box on the home page.
-- `recap` — what happened at a meeting that already occurred.
-- `news` — anything else worth announcing.
+### After a meeting — what happened
+
+**You do not have to remember to do this.** On the morning of every meeting a
+GitHub issue appears saying "Take notes", with that meeting's plan already in
+it. Comment on it to claim it, then write the notes and it closes itself once
+they are merged.
+
+If the issue is still open the next day, that is the reminder. Nothing else is
+chasing you.
+
+Open the meeting's file and write underneath the `---`. Three sentences is
+plenty.
+
+```markdown
+---
+title: Bot commands and first pull requests
+---
+
+Eight people came. Six got GitHub accounts set up and four opened their first
+pull request, which is a record. Next week we are finishing the `!idea` command.
+```
+
+Nothing moves when you do this. The meeting became an archive entry the moment
+its date passed; adding a body just fills in the write-up.
+
+### A guest speaker
+
+A visit **is** a meeting, so it goes on the meeting file. It appears on the
+Connect page automatically.
+
+```markdown
+---
+title: Guest — what a security job actually looks like
+speaker:
+  name: Full Name
+  role: Security Engineer, Company
+  topic: How attackers actually get in, and how you stop them
+  link: https://company.com/team/their-bio
+---
+```
+
+Only add a guest **after they have agreed to be listed on a public website**,
+and link to a public professional page — never a personal email or phone number.
+
+### A different time or place
+
+```markdown
+---
+title: Evening demo night
+starts: '18:00'
+ends: '19:30'
+where: Library
+---
+```
+
+The site then flags it loudly as "not the usual time", so nobody turns up at
+lunch to an empty room. Meetings on other days work too — just name the file
+after that date.
+
+### Cancelling one
+
+```markdown
+---
+canceled: true
+canceledReason: Rally schedule, no lunch clubs
+---
+```
+
+Holidays and school breaks are already handled, so this is only for surprises.
+
+---
+
+## Add an announcement
+
+For news that is not about a meeting, in
+[`src/content/updates/`](src/content/updates/):
+
+```markdown
+---
+title: We won the county hackathon
+date: 2026-11-02
+kind: news
+---
+
+A few sentences about what happened.
+```
 
 ---
 
@@ -170,9 +265,95 @@ Point them at something real on this site to go and do.
 
 ---
 
+## Add to the boss fight
+
+The front door is a break-in. Type `boss-fight` at the terminal and a
+FIREWALL KNIGHT blocks the way.
+
+**The joke, so nobody "fixes" it:** every real attack fails. Fire, ice,
+lightning, psychic damage, SQL injection — the knight has armour proofed
+against all of it, and typing a longer attack actively helps it, because it
+takes a rest while you finish. You get through by not fighting: hornets, a
+squirrel, an unattended refrigerator.
+
+Everything lives in [`src/scripts/boss-fight.ts`](src/scripts/boss-fight.ts)
+and each addition is one entry.
+
+### A new damage type
+
+```ts
+{ match: ['gravity', 'blackhole'], name: 'gravity', armour: 'weighted boots' },
+```
+
+`match` is every word that should land on this joke — synonyms and weapons, so
+`sword`, `axe` and `slash` all give the same answer. Make the armour specific:
+"flame-retardant tabard" is funnier than "fire-proof armour".
+
+### A new taunt
+
+One line in `GENERIC_MISSES`, used when the knight cannot even classify what
+you tried.
+
+### A new way to win
+
+```ts
+{
+  match: ['squirrel'],
+  tells: [
+    ['The knight\'s head snaps to the left at nothing at all.'],
+    ['"Nothing distracts me. Not wildlife. Not the small fast ones."'],
+    ['"If anyone shouts a certain woodland animal at me I WILL look."'],
+  ],
+  lines: [['You point past the knight and shout "SQUIRREL!"', 'normal']],
+}
+```
+
+`tells` are three escalating giveaways. The knight leaks one every third failed
+attack, and they get less subtle each time — the first is a tic it tries to
+cover, the last all but tells you. So an attentive player catches it early and
+nobody is ever permanently stuck.
+
+Ways through work the first time somebody tries them; they never need to fail
+first.
+
+Anyone properly stuck can type `cat .secrets` — even mid-fight — and read the
+notes left by the last person who tried.
+
+Keep them silly and keep them kind. The knight is pompous, not mean, and the
+joke is never at a visitor's expense.
+
+---
+
+## Club artwork
+
+**Do not make a new logo in Canva.** Everything is generated from the site's
+own palette and fonts, so it cannot drift: banners in four sizes, a link
+preview, a Google Form header, letterhead, a photocopiable flyer, slide
+backgrounds, an email signature strip and a square avatar.
+
+They live at `/brand/...` and `/banner/...` on the live site — the table in
+[README.md](README.md) lists every one with what it is for.
+
+Two things worth knowing before you add to it:
+
+- **Adding a topic logo** — the row of GitHub, Python, Azure and so on — is one
+  line in `TOPICS` in [`src/config/site.ts`](src/config/site.ts). Every asset
+  picks it up. `icon` is a name from [simpleicons.org](https://simpleicons.org).
+- **Anything for a printer is light.** A near-black page costs a fortune in
+  toner and looks terrible photocopied, so the flyer, letterhead and signature
+  use a light palette. Gold text goes darker on white, because `#ffc400` on
+  white is unreadable on paper.
+
+Adding a whole new asset is one entry in `BRAND_ASSETS` plus a layout function
+in [`src/lib/banner.ts`](src/lib/banner.ts).
+
+---
+
 ## Add an easter egg to the terminal
 
-The intro terminal has hidden commands. Adding one is three lines in
+There are hidden commands too, outside the fight — `ls -a`, `matrix`, `fortune`
+and others. They are not catalogued anywhere on purpose; they are texture, not
+a checklist. Adding one is three lines in
 [`src/scripts/boot-terminal.ts`](src/scripts/boot-terminal.ts), in the
 `EASTER_EGGS` block:
 
@@ -187,12 +368,10 @@ yourcommand: {
 },
 ```
 
-The styles are `normal`, `dim`, `gold`, `cyan`, `success`, and `error`. The
-count in `.secrets` and the nudge in `help` both update themselves — you do not
-have to change a number anywhere.
+The styles are `normal`, `dim`, `gold`, `cyan`, `success`, and `error`.
 
-Two rules: keep it kind (no joke that lands on a person), and make the `hint`
-solvable. An egg nobody can find is just dead code.
+Two rules: keep it kind, and make the `hint` solvable. An egg nobody can find
+is just dead code.
 
 ---
 
@@ -286,6 +465,10 @@ passes for you, it will pass on GitHub.
 | `src/layouts/`           | The frame every page sits inside.                      |
 | `src/styles/global.css`  | Colours and fonts.                                     |
 | `src/scripts/`           | Code that runs in the visitor's browser.               |
+| `src/scripts/boss-fight.ts` | The firewall knight: attacks, taunts, ways through. |
+| `src/lib/banner.ts`      | Every piece of club artwork, drawn as SVG.             |
+| `src/pages/brand/`       | Where the artwork is published from.                   |
+| `scripts/`               | Jobs that run on GitHub, not in a browser.             |
 | `.devcontainer/`         | The recipe for a Codespace.                            |
 | `.github/workflows/`     | The automatic deployment.                              |
 

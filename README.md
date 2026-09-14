@@ -45,9 +45,14 @@ why it costs nothing to run and why it collects no visitor data.
 
 ## The boot terminal
 
-First-time visitors get a fake command line that asks them to complete
-`while (curious) { ______(); }` before entering. Its behaviour is a single
-setting in [`src/config/site.ts`](src/config/site.ts):
+First-time visitors land on a locked terminal and have to break in. `help`
+offers a handful of innocuous-looking commands that all dead-end, except
+`boss-fight` — which summons a FIREWALL KNIGHT immune to every attack in the
+book and vulnerable only to being distracted. See
+[`src/scripts/boss-fight.ts`](src/scripts/boss-fight.ts).
+
+Its behaviour is a single setting in
+[`src/config/site.ts`](src/config/site.ts):
 
 ```ts
 export const BOOT_MODE: 'skippable' | 'hard' | 'hero' | 'off' = 'skippable';
@@ -63,6 +68,132 @@ export const BOOT_MODE: 'skippable' | 'hard' | 'hero' | 'off' = 'skippable';
 Change the line, save, done. The real page is always written into the HTML
 underneath, so search engines and anyone without JavaScript get the full site in
 every mode — the terminal is a layer on top, never a wall in front.
+
+## Club artwork
+
+All of it is generated from [`src/lib/banner.ts`](src/lib/banner.ts), using the
+same palette and fonts as the website, so nothing can drift out of sync.
+
+| Address | What it is |
+| --- | --- |
+| `/og.png` | 1200×630 link preview. Shows up automatically when the site is pasted into Remind, Discord or a text |
+| `/banner/2x4.svg` · `.png` | 2ft × 4ft, portrait |
+| `/banner/1.6x3.svg` · `.png` | 1.6ft × 3ft, portrait |
+| `/banner/4x2.svg` · `.png` | 4ft × 2ft, landscape |
+| `/banner/3x1.6.svg` · `.png` | 3ft × 1.6ft, landscape |
+
+The landscape versions are laid out separately rather than stretched. The club
+name runs across the full width on one line — sized by measuring the real font
+metrics, so it is always as large as it can be without overflowing, whatever
+proportions the banner has. The topic logos sit small along the bottom and the
+QR sits low in the right corner.
+
+**The landscape banners deliberately carry no meeting time or room.** A printed
+banner outlives a room assignment, and one advertising the wrong room is worse
+than one that sends people to the site to find out. The portrait versions keep
+the meeting box, since they are cheaper to reprint.
+
+Sizes live in `BANNER_SIZES` in the config; anything wider than it is tall gets
+the landscape treatment automatically.
+
+### Other brand assets
+
+| Address | What it is |
+| --- | --- |
+| `/brand/form-banner.svg` · `.png` | 1600×400 header for a Google Form or Classroom |
+| `/brand/letterhead.svg` · `.png` | US Letter letterhead, **light** — for real letters |
+| `/brand/flyer.svg` · `.png` | US Letter flyer, **light** — made to be photocopied |
+| `/brand/slide-title.svg` · `.png` | 1920×1080 slide background, title slide |
+| `/brand/slide-content.svg` · `.png` | 1920×1080 slide background, content slides |
+| `/brand/signature.svg` · `.png` | Email signature strip — see below |
+| `/brand/avatar.svg` · `.png` | 512×512 square mark for Discord, Classroom, anywhere round |
+
+### Slide theme
+
+In Google Slides: **Slide → Edit theme**, pick a layout, then
+**Background → Choose image** and upload the PNG.
+
+Use `slide-title` on the title layout and `slide-content` on everything else.
+The content one is almost empty on purpose — every slide in the deck sits on
+it, so anything in the middle would fight your actual content for the whole
+talk. Its honeycomb is half the opacity of the title slide's for the same
+reason.
+
+### Email signature
+
+**The strip carries no name and no email address, deliberately.** Club officers
+are students, and everything in this repository is published on a public
+website. A student's name and address on the open web is exactly what this site
+does not do — which is why the content schemas have no field for them either.
+
+Your name goes in your mail client, above the strip, where it stays in your
+mail. In Gmail: **Settings → See all settings → Signature**, then:
+
+```
+Your Name
+President, Dev Club
+```
+
+…and insert the image underneath, linked to the site:
+
+```html
+<a href="https://novato-high-school.github.io/Dev-Club/">
+  <img src="https://novato-high-school.github.io/Dev-Club/brand/signature.png"
+       alt="while { Dev Club } — Novato High School" width="600">
+</a>
+```
+
+Keep your name as **real text** rather than part of the image. Plenty of mail
+clients block images by default, and a signature that is entirely a picture
+disappears for those readers and is unreadable to a screen reader.
+
+Anything going near a printer is light, on purpose. A full-bleed near-black
+page costs a fortune in toner, jams school copiers and looks terrible
+photocopied. Screens get the dark version; paper does not.
+
+The palettes are in [`src/lib/banner.ts`](src/lib/banner.ts). The light one is
+not just an inversion: gold stays bright where it is a rule or a block of
+colour, but gold **text** becomes a much darker gold, because `#ffc400` on
+white is about 1.6:1 contrast — fine on a screen, invisible on a copier.
+
+Adding an asset is one entry in `BRAND_ASSETS` in
+[`src/config/site.ts`](src/config/site.ts).
+
+Send a print shop the **.svg** if they will take it — it is vector, so it stays
+sharp at any size. All of the lettering is converted to outlines, which is the
+thing print shops mean when they ask you to "convert text to outlines": the file
+carries its own letter shapes and does not need our fonts installed anywhere.
+The `.png` is there for shops that will not take vector.
+
+### Adding a topic logo
+
+One line in `TOPICS` in [`src/config/site.ts`](src/config/site.ts). The layout
+spaces itself out for however many there are.
+
+```ts
+{ icon: 'raspberrypi', label: 'Hardware' },
+```
+
+`icon` is a name from [simpleicons.org](https://simpleicons.org) — lowercase,
+no dots or spaces, so Node.js is `nodedotjs` and Azure is `microsoftazure`. If
+the name is wrong the build stops and tells you.
+
+### The QR code
+
+Every banner carries one, and it does **not** point at the plain home page. It
+points at `?boot`, which opens the terminal challenge even for somebody who has
+been to the site before — so scanning a banner drops you straight into the
+interesting part rather than a description of it.
+
+The caption is just **"Scan to break in"**. It deliberately promises nothing
+specific about what is on the other side: the onboarding game will keep
+changing, and a printed banner cannot. Saying less also reads better.
+
+The terminal keeps its Skip button, so it is an invitation, not a toll gate.
+
+**On the logos:** these are other companies' trademarks. Using them to say "we
+teach this" is normal, but do not recolour or restyle them, and do not imply
+any of them sponsors the club.
 
 ## Moving to a custom domain
 

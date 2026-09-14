@@ -1,0 +1,63 @@
+# THE NOTES TASK
+# ==============
+# On the morning of a meeting, opens an issue asking somebody to take notes.
+# When the notes land, the same job closes it.
+#
+# WHY THE MORNING: taking notes works when it is a job somebody accepts at the
+# start of a meeting, not a request to reconstruct one from memory afterwards.
+# At a lunch meeting the five minutes after the bell are exactly when people
+# leave. If the task already exists, it can be claimed in the room.
+#
+# It also means one issue does two jobs. It starts as a task to claim; if it is
+# still open tomorrow it has become the reminder, with nothing else running.
+#
+# Most days there is no meeting and the job finishes in seconds.
+
+name: Meeting notes task
+
+on:
+  # 15:17 UTC is early morning in California — before school, on the day of
+  # the meeting, in both halves of the year.
+  #
+  # Daylight saving shifts this between 07:17 and 08:17 local. Either is fine:
+  # what matters is that it lands on the right calendar day and before lunch,
+  # which it does.
+  #
+  # The odd minute is deliberate: scheduled jobs get delayed when everybody
+  # picks the top of the hour.
+  schedule:
+    - cron: '17 15 * * *'
+
+  # So it can be tried by hand without waiting for a Monday.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  ask:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # The script reads dist/meetings.ics, which already has the schedule,
+      # the school holidays and any cancellations applied. Building here means
+      # it can never disagree with the website about when the club meets.
+      - name: Build the site
+        run: npm run build
+
+      - name: Open today's notes task, and close finished ones
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/meeting-notes-issue.mjs
