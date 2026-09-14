@@ -256,9 +256,70 @@ Point them at something real on this site to go and do.
 
 ---
 
+## Add to the boss fight
+
+The front door is a break-in. Type `boss-fight` at the terminal and a
+FIREWALL KNIGHT blocks the way.
+
+**The joke, so nobody "fixes" it:** every real attack fails. Fire, ice,
+lightning, psychic damage, SQL injection — the knight has armour proofed
+against all of it, and typing a longer attack actively helps it, because it
+takes a rest while you finish. You get through by not fighting: hornets, a
+squirrel, an unattended refrigerator.
+
+Everything lives in [`src/scripts/boss-fight.ts`](src/scripts/boss-fight.ts)
+and each addition is one entry.
+
+### A new damage type
+
+```ts
+{ match: ['gravity', 'blackhole'], name: 'gravity', armour: 'weighted boots' },
+```
+
+`match` is every word that should land on this joke — synonyms and weapons, so
+`sword`, `axe` and `slash` all give the same answer. Make the armour specific:
+"flame-retardant tabard" is funnier than "fire-proof armour".
+
+### A new taunt
+
+One line in `GENERIC_MISSES`, used when the knight cannot even classify what
+you tried.
+
+### A new way to win
+
+```ts
+{
+  match: ['squirrel'],
+  tells: [
+    ['The knight\'s head snaps to the left at nothing at all.'],
+    ['"Nothing distracts me. Not wildlife. Not the small fast ones."'],
+    ['"If anyone shouts a certain woodland animal at me I WILL look."'],
+  ],
+  lines: [['You point past the knight and shout "SQUIRREL!"', 'normal']],
+}
+```
+
+`tells` are three escalating giveaways. The knight leaks one every third failed
+attack, and they get less subtle each time — the first is a tic it tries to
+cover, the last all but tells you. So an attentive player catches it early and
+nobody is ever permanently stuck.
+
+Ways through work the first time somebody tries them; they never need to fail
+first.
+
+Anyone properly stuck can type `cat .secrets` — even mid-fight — and read the
+notes left by the last person who tried.
+
+Keep them silly and keep them kind. The knight is pompous, not mean, and the
+joke is never at a visitor's expense.
+
+---
+
 ## Add an easter egg to the terminal
 
-The intro terminal has hidden commands. Adding one is three lines in
+There are hidden commands too, outside the fight — `ls -a`, `matrix`, `fortune`
+and others. They are not catalogued anywhere on purpose; they are texture, not
+a checklist. Adding one is three lines in
 [`src/scripts/boot-terminal.ts`](src/scripts/boot-terminal.ts), in the
 `EASTER_EGGS` block:
 
@@ -273,12 +334,10 @@ yourcommand: {
 },
 ```
 
-The styles are `normal`, `dim`, `gold`, `cyan`, `success`, and `error`. The
-count in `.secrets` and the nudge in `help` both update themselves — you do not
-have to change a number anywhere.
+The styles are `normal`, `dim`, `gold`, `cyan`, `success`, and `error`.
 
-Two rules: keep it kind (no joke that lands on a person), and make the `hint`
-solvable. An egg nobody can find is just dead code.
+Two rules: keep it kind, and make the `hint` solvable. An egg nobody can find
+is just dead code.
 
 ---
 
