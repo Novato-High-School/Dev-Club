@@ -147,9 +147,10 @@ Still to do here:
 - [ ] **Watch the first few weeks.** The holiday rules are only as good as the
       assumptions behind them. Thanksgiving-week-off is district policy, not
       law, and worth re-checking each August.
-- [ ] **A write-up nudge.** A workflow that opens an issue the morning after a
-      meeting with no notes, linking straight to the edit page. Turns the
-      write-up into a claimable task.
+- [x] **A write-up nudge.** `.github/workflows/meeting-notes.yml` opens an
+      issue on the afternoon of a meeting that has no notes, linking straight
+      to the editor. Same day rather than the morning after: the people who
+      were in the room are still in the building.
 - [ ] **`npm run plan-term`** to generate stub files for a term's Mondays.
 
 ### On Remind

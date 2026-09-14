@@ -1,0 +1,61 @@
+# THE WRITE-UP NUDGE
+# ==================
+# On the afternoon of a meeting, if nobody has written it up, this opens an
+# issue asking somebody to. It links straight to the editor, so claiming it is
+# one click.
+#
+# WHY THE SAME DAY: the people who were in the room are still in the building
+# and it is still fresh. By the next morning the meeting is a blur and the
+# issue is a chore.
+#
+# It does nothing at all on days with no meeting, and nothing on a meeting that
+# is already written up, so most runs finish in seconds having decided there is
+# nothing to do.
+
+name: Ask for meeting notes
+
+on:
+  # 23:17 UTC is mid-afternoon in California — the same day as the meeting,
+  # comfortably after a lunchtime one, in both halves of the year.
+  #
+  # Daylight saving shifts this between 15:17 and 16:17 local. Either is fine;
+  # what matters is that it stays on the same calendar day, which it does.
+  #
+  # The odd minute is deliberate: scheduled jobs get delayed when everybody
+  # picks the top of the hour.
+  schedule:
+    - cron: '17 23 * * *'
+
+  # So it can be tried by hand without waiting for a Monday.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  ask:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v7
+
+      - name: Set up Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      # The script reads dist/meetings.ics, which already has the schedule,
+      # the school holidays and any cancellations applied. Building here means
+      # it can never disagree with the website about when the club meets.
+      - name: Build the site
+        run: npm run build
+
+      - name: Open an issue if today's meeting has no notes
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: node scripts/meeting-notes-issue.mjs
