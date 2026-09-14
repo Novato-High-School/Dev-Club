@@ -405,28 +405,27 @@ export function startBootTerminal(options: BootOptions): void {
   /** Opens the boss fight. */
   async function startFight(): Promise<void> {
     fight = newFight();
-    print('');
-    await printSequence(
-      [
-        ['Searching for another way in ...', 'dim'],
-        ['', 'normal'],
-      ],
-      reducedMotion ? 0 : 220,
-    );
+
+    // Wipe the screen first. The terminal shows about eighteen lines, and the
+    // knight plus its introduction is most of that — without clearing, the
+    // art scrolls off the top before anybody has seen it.
+    screen.replaceChildren();
+
     await printSequence(KNIGHT_ART, reducedMotion ? 0 : 55);
     await printSequence(
       [
         ['', 'normal'],
         ['A FIREWALL KNIGHT blocks the way.', 'gold'],
         ['', 'normal'],
-        ['It is holding a flaming sword and it has clearly done', 'normal'],
-        ['this before.', 'normal'],
-        ['', 'normal'],
         ['Type an attack. Or type run.', 'dim'],
-        ['', 'normal'],
       ],
       reducedMotion ? 0 : 120,
     );
+
+    // printSequence keeps the view pinned to the newest line; put it back to
+    // the top so the whole knight is on screen when the fight begins.
+    screen.scrollTop = 0;
+
     input.placeholder = 'your attack';
   }
 
@@ -501,7 +500,7 @@ export function startBootTerminal(options: BootOptions): void {
     enter.textContent = '[ Enter the site ]';
     enter.addEventListener('click', () => finish());
     form.parentElement!.appendChild(enter);
-    enter.focus();
+    enter.focus({ preventScroll: true });
   }
 
   /** Runs one typed command. */
@@ -687,8 +686,23 @@ export function startBootTerminal(options: BootOptions): void {
       root.remove();
       revealSite();
       document.removeEventListener('keydown', onKeydown, true);
-      // Put keyboard focus somewhere sensible in the real page.
-      (previouslyFocused ?? document.querySelector<HTMLElement>('a[href]'))?.focus();
+
+      /**
+       * Start at the top of the page.
+       *
+       * The overlay hides the site rather than replacing it, so the page
+       * underneath can already be scrolled — most often because the browser
+       * restored the position from a previous visit when this one loaded, which
+       * you cannot see while the terminal is covering it. Entering the site
+       * then dropped you into the middle of the page instead of at the title.
+       */
+      window.scrollTo(0, 0);
+
+      // preventScroll matters: focusing an element scrolls it into view, which
+      // would undo the line above.
+      (previouslyFocused ?? document.querySelector<HTMLElement>('a[href]'))?.focus({
+        preventScroll: true,
+      });
     };
     // Let the fade finish first, unless the visitor asked for less motion.
     if (reducedMotion) removeIt();

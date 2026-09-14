@@ -44,22 +44,17 @@ export function newFight(): FightState {
  * The knight itself. Kept narrow enough to fit the terminal on a phone.
  */
 export const KNIGHT_ART: FightLine[] = [
-  ['                              (  )        ', 'gold'],
-  ['                             )    (       ', 'gold'],
-  ['                              )  (        ', 'gold'],
-  ['                               ||         ', 'dim'],
-  ['              .-"""""""-.      ||         ', 'normal'],
-  ['             /  _     _  \\     ||         ', 'normal'],
-  ['            |  (o)   (o)  |    ||         ', 'normal'],
-  ['            |     ___     |  --++--       ', 'normal'],
-  ['            |    \\___/    |    ||         ', 'normal'],
-  ['             \\___________/     ()         ', 'normal'],
-  ['            /|           |\\              ', 'normal'],
-  ['           / |  FIREWALL | \\             ', 'gold'],
-  ['          |  |  KNIGHT   |  \\            ', 'gold'],
-  ['          |  |___________|  |             ', 'normal'],
-  ['           \\ /           \\ /             ', 'normal'],
-  ['           |_|           |_|              ', 'normal'],
+  ['                        (  )              ', 'gold'],
+  ['                       )    (             ', 'gold'],
+  ['           .-"""""-.    )  (              ', 'normal'],
+  ['          /  _   _  \\    ||               ', 'normal'],
+  ['         |  (o) (o)  |   ||               ', 'normal'],
+  ['         |    ___    | --++--             ', 'normal'],
+  ['          \\  \\___/  /    ||               ', 'normal'],
+  ['         /|_________|\\   ()               ', 'normal'],
+  ['        / | FIREWALL | \\                  ', 'gold'],
+  ['       |  |  KNIGHT  |  |                 ', 'gold'],
+  ['        \\_|__|___|__|_/                   ', 'normal'],
 ];
 
 /**
