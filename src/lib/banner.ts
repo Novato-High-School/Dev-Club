@@ -17,11 +17,8 @@
 
 import iconData from '@iconify-json/simple-icons/icons.json';
 
-import { TOPICS, CLUB, SITE_URL, SITE_NAME, BASE } from '../config/site';
+import { TOPICS, CLUB, SITE_NAME, SITE_URL_DISPLAY } from '../config/site';
 import { outline, outlineText, textWidth, fitSize } from './fonts';
-
-/** The folder the site lives in, shown on the printed URL. */
-const BASE_PATH = (BASE as string) === '/' ? '' : BASE;
 
 /** The palette, matching src/styles/global.css exactly. */
 const COLOR = {
@@ -131,7 +128,7 @@ export async function ogImageSVG(): Promise<string> {
       size: 30,
       family: 'display',
     }),
-    outline('No experience needed. We build real things, in the open.', COLOR.muted, {
+    outline('No experience needed. We build real things for real users.', COLOR.muted, {
       x: 80,
       y: 368,
       size: 26,
@@ -355,7 +352,7 @@ async function landscapeSVG(
       ],
       { x: W / 2, y: H * 0.42, size: titleSize, family: 'mono', weight: 700, anchor: 'middle' },
     ),
-    outline('Build real things. Publish them in the open.', COLOR.bone, {
+    outline('Build real things for real users.', COLOR.bone, {
       x: margin, y: H * 0.56, size: H * 0.058, family: 'display', weight: 700,
     }),
     outline('No experience needed.', COLOR.gold, {
@@ -366,7 +363,7 @@ async function landscapeSVG(
   const topicMarks = await Promise.all(
     TOPICS.map(async (topic, i) => {
       const cx = margin + step * (i + 0.5);
-      const cy = H * 0.81;
+      const cy = H * 0.785;
       const label = await outline(topic.label, COLOR.muted, {
         x: cx, y: cy + logoSize * 1.05, size: labelSize,
         family: 'mono', anchor: 'middle',
@@ -385,6 +382,26 @@ async function landscapeSVG(
     gap: captionGap,
   });
 
+  /**
+   * The address, for anyone who would rather type it than scan — and so a
+   * photograph of the banner still says where to go.
+   *
+   * It runs along the bottom, ending where the code begins, rather than being
+   * squeezed underneath it. Under the code there is only about a fifth of the
+   * banner's width, which made it too small to read from any useful distance.
+   */
+  const urlSize = Math.min(
+    H * 0.04,
+    await fitSize(SITE_URL_DISPLAY, qrX - captionGap - margin, 'mono'),
+  );
+  const url = await outline(SITE_URL_DISPLAY, COLOR.muted, {
+    x: qrX - captionGap,
+    y: H * 0.952,
+    size: urlSize,
+    family: 'mono',
+    anchor: 'end',
+  });
+
   return `<svg xmlns="http://www.w3.org/2000/svg"
      width="${inchesWide}in" height="${inchesTall}in"
      viewBox="0 0 ${W} ${H}">
@@ -398,6 +415,7 @@ async function landscapeSVG(
   ${topicMarks.join('\n  ')}
 
   ${qrArt}
+  ${url}
 </svg>`;
 }
 
@@ -440,14 +458,14 @@ async function portraitSVG(
       ],
       { x: mid, y: H * 0.247, size: W * 0.115, family: 'mono', weight: 700, anchor: 'middle' },
     ),
-    outline('Build real things.', COLOR.bone, {
-      x: mid, y: H * 0.32, size: W * 0.058, family: 'display', weight: 700, anchor: 'middle',
+    outline('Build real things', COLOR.bone, {
+      x: mid, y: H * 0.325, size: W * 0.062, family: 'display', weight: 700, anchor: 'middle',
     }),
-    outline('Publish them in the open.', COLOR.bone, {
-      x: mid, y: H * 0.368, size: W * 0.058, family: 'display', weight: 700, anchor: 'middle',
+    outline('for real users.', COLOR.bone, {
+      x: mid, y: H * 0.378, size: W * 0.062, family: 'display', weight: 700, anchor: 'middle',
     }),
     outline('No experience needed.', COLOR.gold, {
-      x: mid, y: H * 0.425, size: W * 0.05, family: 'display', anchor: 'middle',
+      x: mid, y: H * 0.435, size: W * 0.05, family: 'display', anchor: 'middle',
     }),
   ]);
 
@@ -481,7 +499,7 @@ async function portraitSVG(
     outline(`Lunch \u00b7 Room ${CLUB.meetingRoom}`, COLOR.bone, {
       x: mid, y: infoTop + H * 0.09, size: W * 0.048, family: 'mono', anchor: 'middle',
     }),
-    outline(`${SITE_URL.replace('https://', '')}${BASE_PATH}`, COLOR.muted, {
+    outline(SITE_URL_DISPLAY, COLOR.muted, {
       x: mid, y: H * 0.975, size: W * 0.033, family: 'mono', anchor: 'middle',
     }),
   ]);

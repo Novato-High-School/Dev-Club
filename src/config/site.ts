@@ -27,6 +27,13 @@ export const SITE_URL = 'https://novato-high-school.github.io';
 export const BASE = '/Dev-Club';
 
 /**
+ * The address as it should be PRINTED — capitalised so it can be read across a
+ * room, with the trailing slash. Domain names ignore capitals, so this is only
+ * about legibility; it goes on banners, never in a link.
+ */
+export const SITE_URL_DISPLAY = 'Novato-High-School.github.io/Dev-Club/';
+
+/**
  * How the "boot the club" terminal intro behaves.
  *
  *   'skippable' - Full screen terminal on a visitor's first arrival, with a
@@ -56,8 +63,9 @@ export const BOOT_STORAGE_KEY = 'devclub.boot.v1';
 export const SITE_NAME = 'Dev Club';
 export const SITE_LOGO = 'while { Dev Club }';
 export const SITE_DESCRIPTION =
-  'The student developer club at Novato High School. We build real projects, ' +
-  'learn real tools, and welcome people who have never written a line of code.';
+  'The student developer club at Novato High School. We build real things for ' +
+  'real users, learn real tools, and welcome people who have never written a ' +
+  'line of code.';
 
 /**
  * Club details shown on the Home and Join pages.
