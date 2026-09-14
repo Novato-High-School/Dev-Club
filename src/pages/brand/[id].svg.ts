@@ -15,6 +15,9 @@ import {
   letterheadSVG,
   flyerSVG,
   avatarSVG,
+  slideTitleSVG,
+  slideContentSVG,
+  signatureSVG,
 } from '../../lib/banner';
 import { BRAND_ASSETS } from '../../config/site';
 import { qrCode } from '../banner/[id].svg';
@@ -36,6 +39,12 @@ export async function renderBrandAsset(
       return flyerSVG(asset.width, asset.height, asset.theme, await qrCode());
     case 'avatar':
       return avatarSVG(asset.width, asset.theme);
+    case 'slide-title':
+      return slideTitleSVG(asset.width, asset.height, asset.theme);
+    case 'slide-content':
+      return slideContentSVG(asset.width, asset.height, asset.theme);
+    case 'signature':
+      return signatureSVG(asset.width, asset.height, asset.theme);
   }
 }
 

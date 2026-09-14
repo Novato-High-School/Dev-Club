@@ -225,7 +225,14 @@ export const QR_TARGET_QUERY = '?boot';
 export const BRAND_ASSETS: {
   id: string;
   label: string;
-  kind: 'form-banner' | 'letterhead' | 'flyer' | 'avatar';
+  kind:
+    | 'form-banner'
+    | 'letterhead'
+    | 'flyer'
+    | 'avatar'
+    | 'slide-title'
+    | 'slide-content'
+    | 'signature';
   theme: 'dark' | 'light';
   width: number;
   height: number;
@@ -257,6 +264,42 @@ export const BRAND_ASSETS: {
     width: 8.5,
     height: 11,
     unit: 'in',
+  },
+  {
+    id: 'slide-title',
+    label: 'Slide background — title slide',
+    kind: 'slide-title',
+    theme: 'dark',
+    width: 1920,
+    height: 1080,
+    unit: 'px',
+  },
+  {
+    id: 'slide-content',
+    label: 'Slide background — content slides, deliberately empty',
+    kind: 'slide-content',
+    theme: 'dark',
+    width: 1920,
+    height: 1080,
+    unit: 'px',
+  },
+  {
+    /**
+     * A branding strip for an email signature.
+     *
+     * It carries NO name and NO email address, on purpose. Club officers are
+     * students, and anything generated here is published on a public website —
+     * a minor's name and address on the open web is exactly what this site
+     * does not do. Whoever is president types their own name in their mail
+     * client above this strip, where it stays private to their mail.
+     */
+    id: 'signature',
+    label: 'Email signature strip — no names, see README',
+    kind: 'signature',
+    theme: 'light',
+    width: 1200,
+    height: 280,
+    unit: 'px',
   },
   {
     id: 'avatar',

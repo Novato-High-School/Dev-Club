@@ -867,3 +867,137 @@ export async function avatarSVG(size: number, theme: Theme): Promise<string> {
   ${braces}
 </svg>`;
 }
+
+/**
+ * SLIDE BACKGROUND — TITLE, 1920×1080.
+ *
+ * For the opening slide of a deck. The presenter puts the talk's title over
+ * the middle, so the club identity sits high and the lower half stays clear.
+ */
+export async function slideTitleSVG(width: number, height: number, theme: Theme): Promise<string> {
+  const c = palette(theme);
+  const mid = width / 2;
+
+  const titleSize = Math.min(
+    await fitSize('while { Dev Club }', width * 0.58, 'mono', 700),
+    height * 0.11,
+  );
+
+  const parts = await Promise.all([
+    outlineText(
+      [
+        { text: 'while', fill: c.goldInk },
+        { text: ' { ', fill: c.muted },
+        { text: 'Dev Club', fill: c.bone },
+        { text: ' }', fill: c.muted },
+      ],
+      { x: mid, y: height * 0.27, size: titleSize, family: 'mono', weight: 700, anchor: 'middle' },
+    ),
+    outline('Build real things for real users.', c.muted, {
+      x: mid, y: height * 0.36, size: height * 0.033, family: 'display', anchor: 'middle',
+    }),
+  ]);
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+  <rect width="${width}" height="${height}" fill="${c.ink}"/>
+  ${honeycomb(width, height, height / 7, 0.12, c.gold)}
+  <rect x="0" y="0" width="${width}" height="${height * 0.014}" fill="${c.gold}"/>
+  ${parts.join('\n  ')}
+</svg>`;
+}
+
+/**
+ * SLIDE BACKGROUND — CONTENT, 1920×1080.
+ *
+ * Deliberately almost empty. Every slide in the deck sits on this, so anything
+ * in the middle would fight the actual content for the whole talk. A small
+ * mark bottom-left, a gold rule along the bottom, and a honeycomb faint enough
+ * that text stays readable over it.
+ */
+export async function slideContentSVG(width: number, height: number, theme: Theme): Promise<string> {
+  const c = palette(theme);
+
+  const mark = await outlineText(
+    [
+      { text: 'while', fill: c.goldInk },
+      { text: ' { ', fill: c.muted },
+      { text: 'Dev Club', fill: c.bone },
+      { text: ' }', fill: c.muted },
+    ],
+    { x: width * 0.035, y: height * 0.955, size: height * 0.028, family: 'mono', weight: 700 },
+  );
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+  <rect width="${width}" height="${height}" fill="${c.ink}"/>
+
+  <!-- Half the usual opacity. Body text has to stay readable on top of this
+       for an entire talk, which the title slide does not have to worry about. -->
+  ${honeycomb(width, height, height / 7, 0.06, c.gold)}
+
+  <rect x="0" y="${height - height * 0.008}" width="${width}" height="${height * 0.008}" fill="${c.gold}"/>
+  ${mark}
+</svg>`;
+}
+
+/**
+ * EMAIL SIGNATURE STRIP — 1200×280, light.
+ *
+ * Sits under whatever the sender types. It carries NO name and NO email
+ * address: club officers are students, and everything generated here is
+ * published on a public website. A student's name and address on the open web
+ * is precisely what this site does not do. The sender's own name goes in their
+ * mail client, above this, where it stays in their mail.
+ *
+ * Light because email is read on a white background far more often than not,
+ * and a dark strip would sit in the message like a hole.
+ */
+export async function signatureSVG(width: number, height: number, theme: Theme): Promise<string> {
+  const c = palette(theme);
+  const left = width * 0.03;
+
+  const parts = await Promise.all([
+    outlineText(
+      [
+        { text: 'while', fill: c.goldInk },
+        { text: ' { ', fill: c.muted },
+        { text: 'Dev Club', fill: c.bone },
+        { text: ' }', fill: c.muted },
+      ],
+      { x: left, y: height * 0.42, size: height * 0.22, family: 'mono', weight: 700 },
+    ),
+    outline('Novato High School', c.muted, {
+      x: left, y: height * 0.63, size: height * 0.115, family: 'display',
+    }),
+    outline(SITE_URL_DISPLAY, c.muted, {
+      x: left, y: height * 0.85, size: height * 0.105, family: 'mono',
+    }),
+  ]);
+
+  /**
+   * Topic logos on the right, small, as a quiet reminder of what we do.
+   *
+   * Laid out from the RIGHT edge backwards, so the row always ends where it
+   * should however many topics there are. Spacing them forwards from a fixed
+   * left position pushed the last logo off the strip the moment there were
+   * six of them.
+   */
+  const logoSize = height * 0.17;
+  const step = logoSize * 1.55;
+  const lastCx = width - width * 0.04 - logoSize / 2;
+  const marks = TOPICS.map((topic, i) =>
+    logo(
+      topic.icon,
+      lastCx - step * (TOPICS.length - 1 - i),
+      height * 0.5,
+      logoSize,
+      c.muted,
+    ),
+  );
+
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+  <rect width="${width}" height="${height}" fill="${c.ink}"/>
+  <rect x="0" y="0" width="${width}" height="${height * 0.035}" fill="${c.gold}"/>
+  ${parts.join('\n  ')}
+  ${marks.join('\n  ')}
+</svg>`;
+}

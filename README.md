@@ -98,7 +98,49 @@ the landscape treatment automatically.
 | `/brand/form-banner.svg` · `.png` | 1600×400 header for a Google Form or Classroom |
 | `/brand/letterhead.svg` · `.png` | US Letter letterhead, **light** — for real letters |
 | `/brand/flyer.svg` · `.png` | US Letter flyer, **light** — made to be photocopied |
+| `/brand/slide-title.svg` · `.png` | 1920×1080 slide background, title slide |
+| `/brand/slide-content.svg` · `.png` | 1920×1080 slide background, content slides |
+| `/brand/signature.svg` · `.png` | Email signature strip — see below |
 | `/brand/avatar.svg` · `.png` | 512×512 square mark for Discord, Classroom, anywhere round |
+
+### Slide theme
+
+In Google Slides: **Slide → Edit theme**, pick a layout, then
+**Background → Choose image** and upload the PNG.
+
+Use `slide-title` on the title layout and `slide-content` on everything else.
+The content one is almost empty on purpose — every slide in the deck sits on
+it, so anything in the middle would fight your actual content for the whole
+talk. Its honeycomb is half the opacity of the title slide's for the same
+reason.
+
+### Email signature
+
+**The strip carries no name and no email address, deliberately.** Club officers
+are students, and everything in this repository is published on a public
+website. A student's name and address on the open web is exactly what this site
+does not do — which is why the content schemas have no field for them either.
+
+Your name goes in your mail client, above the strip, where it stays in your
+mail. In Gmail: **Settings → See all settings → Signature**, then:
+
+```
+Your Name
+President, Dev Club
+```
+
+…and insert the image underneath, linked to the site:
+
+```html
+<a href="https://novato-high-school.github.io/Dev-Club/">
+  <img src="https://novato-high-school.github.io/Dev-Club/brand/signature.png"
+       alt="while { Dev Club } — Novato High School" width="600">
+</a>
+```
+
+Keep your name as **real text** rather than part of the image. Plenty of mail
+clients block images by default, and a signature that is entirely a picture
+disappears for those readers and is unreadable to a screen reader.
 
 Anything going near a printer is light, on purpose. A full-bleed near-black
 page costs a fortune in toner, jams school copiers and looks terrible
