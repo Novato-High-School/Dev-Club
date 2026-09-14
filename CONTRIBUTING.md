@@ -130,7 +130,16 @@ follow along from the meeting page.
 
 ### After a meeting — what happened
 
-Open the same file and write underneath the `---`. Three sentences is plenty.
+**You do not have to remember to do this.** On the morning of every meeting a
+GitHub issue appears saying "Take notes", with that meeting's plan already in
+it. Comment on it to claim it, then write the notes and it closes itself once
+they are merged.
+
+If the issue is still open the next day, that is the reminder. Nothing else is
+chasing you.
+
+Open the meeting's file and write underneath the `---`. Three sentences is
+plenty.
 
 ```markdown
 ---
@@ -315,6 +324,31 @@ joke is never at a visitor's expense.
 
 ---
 
+## Club artwork
+
+**Do not make a new logo in Canva.** Everything is generated from the site's
+own palette and fonts, so it cannot drift: banners in four sizes, a link
+preview, a Google Form header, letterhead, a photocopiable flyer, slide
+backgrounds, an email signature strip and a square avatar.
+
+They live at `/brand/...` and `/banner/...` on the live site — the table in
+[README.md](README.md) lists every one with what it is for.
+
+Two things worth knowing before you add to it:
+
+- **Adding a topic logo** — the row of GitHub, Python, Azure and so on — is one
+  line in `TOPICS` in [`src/config/site.ts`](src/config/site.ts). Every asset
+  picks it up. `icon` is a name from [simpleicons.org](https://simpleicons.org).
+- **Anything for a printer is light.** A near-black page costs a fortune in
+  toner and looks terrible photocopied, so the flyer, letterhead and signature
+  use a light palette. Gold text goes darker on white, because `#ffc400` on
+  white is unreadable on paper.
+
+Adding a whole new asset is one entry in `BRAND_ASSETS` plus a layout function
+in [`src/lib/banner.ts`](src/lib/banner.ts).
+
+---
+
 ## Add an easter egg to the terminal
 
 There are hidden commands too, outside the fight — `ls -a`, `matrix`, `fortune`
@@ -431,6 +465,10 @@ passes for you, it will pass on GitHub.
 | `src/layouts/`           | The frame every page sits inside.                      |
 | `src/styles/global.css`  | Colours and fonts.                                     |
 | `src/scripts/`           | Code that runs in the visitor's browser.               |
+| `src/scripts/boss-fight.ts` | The firewall knight: attacks, taunts, ways through. |
+| `src/lib/banner.ts`      | Every piece of club artwork, drawn as SVG.             |
+| `src/pages/brand/`       | Where the artwork is published from.                   |
+| `scripts/`               | Jobs that run on GitHub, not in a browser.             |
 | `.devcontainer/`         | The recipe for a Codespace.                            |
 | `.github/workflows/`     | The automatic deployment.                              |
 
