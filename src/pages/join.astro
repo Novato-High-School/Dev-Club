@@ -19,7 +19,8 @@ import { Icon } from 'astro-icon/components';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import HexGrid from '../components/HexGrid.astro';
 import Prompt from '../components/Prompt.astro';
-import { CLUB } from '../config/site';
+import { CLUB, PERIODS } from '../config/site';
+import { formatPeriod } from '../lib/schedule';
 
 // Until somebody fills in the real form link, show an honest placeholder
 // rather than a button that goes nowhere.
@@ -84,7 +85,7 @@ const EXPECTATIONS = [
         </div>
         <div>
           <dt class="text-muted">time</dt>
-          <dd class="mt-1 text-lg text-gold">{CLUB.meetingTime}</dd>
+          <dd class="mt-1 text-lg text-gold">{formatPeriod(PERIODS.regular)}</dd>
         </div>
         <div>
           <dt class="text-muted">where</dt>

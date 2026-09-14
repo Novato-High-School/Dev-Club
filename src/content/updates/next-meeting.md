@@ -1,6 +1,6 @@
 ---
 title: Weekly meeting — everyone welcome
-date: 2026-09-17
+date: 2026-09-14
 kind: meeting
 ---
 
