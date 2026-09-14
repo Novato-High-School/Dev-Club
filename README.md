@@ -77,10 +77,11 @@ same palette and fonts as the website, so nothing can drift out of sync.
 | `/banner/4x2.svg` · `.png` | 4ft × 2ft, landscape |
 | `/banner/3x1.6.svg` · `.png` | 3ft × 1.6ft, landscape |
 
-The landscape versions are laid out separately rather than stretched. They put
-the club name first — sized to fill the width, measured rather than guessed, so
-it fits whatever proportions the banner has — with the QR in a column down the
-right and the topic logos small along the bottom.
+The landscape versions are laid out separately rather than stretched. The club
+name runs across the full width on one line — sized by measuring the real font
+metrics, so it is always as large as it can be without overflowing, whatever
+proportions the banner has. The topic logos sit small along the bottom and the
+QR sits low in the right corner.
 
 **The landscape banners deliberately carry no meeting time or room.** A printed
 banner outlives a room assignment, and one advertising the wrong room is worse
@@ -116,9 +117,9 @@ points at `?boot`, which opens the terminal challenge even for somebody who has
 been to the site before — so scanning a banner drops you straight into the
 interesting part rather than a description of it.
 
-The caption reads **"Scan to break in / find the hidden commands"**. No count,
-on purpose: the number would go stale the first time somebody adds an egg, and
-not saying is more inviting anyway.
+The caption is just **"Scan to break in"**. It deliberately promises nothing
+specific about what is on the other side: the onboarding game will keep
+changing, and a printed banner cannot. Saying less also reads better.
 
 The terminal keeps its Skip button, so it is an invitation, not a toll gate.
 
