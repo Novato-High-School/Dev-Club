@@ -76,31 +76,31 @@ export const DAMAGE_TYPES: {
   name: string;
   armour: string;
 }[] = [
-  { match: ['fire', 'flame', 'burn', 'fireball', 'torch', 'lava', 'magma'], name: 'fire', armour: 'flame-retardant tabard' },
-  { match: ['ice', 'cold', 'frost', 'freeze', 'blizzard', 'snow'], name: 'ice', armour: 'thermal underlayer' },
+  { match: ['fire', 'flame', 'burn', 'fireball', 'torch', 'lava', 'magma'], name: 'fire', armour: 'a flame-retardant tabard' },
+  { match: ['ice', 'cold', 'frost', 'freeze', 'blizzard', 'snow'], name: 'ice', armour: 'a thermal underlayer' },
   { match: ['lightning', 'shock', 'electric', 'thunderbolt', 'taser', 'volt'], name: 'lightning', armour: 'rubber-soled sabatons' },
-  { match: ['thunder', 'sonic', 'sound', 'scream', 'shout', 'noise'], name: 'thunder', armour: 'noise-cancelling helm' },
-  { match: ['acid', 'corrosive', 'dissolve'], name: 'acid', armour: 'lab-grade apron' },
-  { match: ['poison', 'toxic', 'venomous', 'gas'], name: 'poison', armour: 'sealed respirator' },
-  { match: ['psychic', 'mind', 'telepath', 'mental', 'confuse'], name: 'psychic', armour: 'tinfoil coif' },
-  { match: ['necrotic', 'death', 'decay', 'rot', 'undead'], name: 'necrotic', armour: 'suspiciously fresh surcoat' },
-  { match: ['radiant', 'holy', 'divine', 'smite', 'bless'], name: 'radiant', armour: 'polarised visor' },
+  { match: ['thunder', 'sonic', 'sound', 'scream', 'shout', 'noise'], name: 'thunder', armour: 'a noise-cancelling helm' },
+  { match: ['acid', 'corrosive', 'dissolve'], name: 'acid', armour: 'a lab-grade apron' },
+  { match: ['poison', 'toxic', 'venomous', 'gas'], name: 'poison', armour: 'a sealed respirator' },
+  { match: ['psychic', 'mind', 'telepath', 'mental', 'confuse'], name: 'psychic', armour: 'a tinfoil coif' },
+  { match: ['necrotic', 'death', 'decay', 'rot', 'undead'], name: 'necrotic', armour: 'a suspiciously fresh surcoat' },
+  { match: ['radiant', 'holy', 'divine', 'smite', 'bless'], name: 'radiant', armour: 'a polarised visor' },
   { match: ['force', 'kinetic', 'telekinesis', 'push'], name: 'force', armour: 'reinforced bracing' },
   { match: ['slash', 'sword', 'blade', 'axe', 'katana', 'machete', 'cut', 'sabre', 'saber'], name: 'slashing', armour: 'overlapping plate' },
   { match: ['pierce', 'arrow', 'spear', 'bow', 'lance', 'dagger', 'stab', 'javelin', 'dart'], name: 'piercing', armour: 'chainmail, obviously' },
   { match: ['bludgeon', 'hammer', 'mace', 'club', 'bat', 'punch', 'kick', 'fist', 'smash'], name: 'bludgeoning', armour: 'a very good gambeson' },
-  { match: ['water', 'flood', 'tide', 'wave', 'hydro'], name: 'water', armour: 'waterproof cloak' },
-  { match: ['wind', 'air', 'gust', 'tornado', 'cyclone'], name: 'wind', armour: 'aerodynamic crest' },
-  { match: ['earth', 'rock', 'stone', 'boulder', 'quake'], name: 'earth', armour: 'hard hat' },
-  { match: ['shadow', 'dark', 'void', 'umbral'], name: 'shadow', armour: 'night-vision visor' },
+  { match: ['water', 'flood', 'tide', 'wave', 'hydro'], name: 'water', armour: 'a waterproof cloak' },
+  { match: ['wind', 'air', 'gust', 'tornado', 'cyclone'], name: 'wind', armour: 'an aerodynamic crest' },
+  { match: ['earth', 'rock', 'stone', 'boulder', 'quake'], name: 'earth', armour: 'a hard hat' },
+  { match: ['shadow', 'dark', 'void', 'umbral'], name: 'shadow', armour: 'a night-vision visor' },
   { match: ['light', 'laser', 'beam', 'photon'], name: 'light', armour: 'mirrored pauldrons' },
-  { match: ['arcane', 'magic', 'spell', 'wizard', 'wand', 'hex', 'curse'], name: 'arcane', armour: 'anti-magic gorget' },
+  { match: ['arcane', 'magic', 'spell', 'wizard', 'wand', 'hex', 'curse'], name: 'arcane', armour: 'an anti-magic gorget' },
   { match: ['nature', 'vine', 'thorn', 'root', 'druid'], name: 'nature', armour: 'gardening gloves' },
   { match: ['explosive', 'bomb', 'grenade', 'tnt', 'dynamite', 'blast', 'rocket'], name: 'explosive', armour: 'bomb-disposal padding' },
-  { match: ['radiation', 'nuclear', 'nuke', 'atomic', 'gamma'], name: 'radiation', armour: 'lead-lined cuirass' },
+  { match: ['radiation', 'nuclear', 'nuke', 'atomic', 'gamma'], name: 'radiation', armour: 'a lead-lined cuirass' },
   { match: ['gravity', 'blackhole', 'black hole', 'singularity'], name: 'gravity', armour: 'weighted boots' },
-  { match: ['time', 'chrono', 'rewind', 'stasis'], name: 'temporal', armour: 'wristwatch it refuses to explain' },
-  { match: ['plasma', 'ion'], name: 'plasma', armour: 'ceramic heat shield' },
+  { match: ['time', 'chrono', 'rewind', 'stasis'], name: 'temporal', armour: 'a wristwatch it refuses to explain' },
+  { match: ['plasma', 'ion'], name: 'plasma', armour: 'a ceramic heat shield' },
   { match: ['steel', 'metal', 'iron'], name: 'metal', armour: 'more metal' },
   { match: ['ghost', 'spectral', 'phase', 'spirit'], name: 'spectral', armour: 'consecrated chainmail' },
   { match: ['dragon', 'draconic', 'wyrm'], name: 'draconic', armour: 'dragonhide, second-hand' },
@@ -113,11 +113,11 @@ export const DAMAGE_TYPES: {
   { match: ['xss', 'script', 'javascript'], name: 'script injection', armour: 'a strict content policy' },
 ];
 
-/** Armour is singular or plural; this keeps the sentence readable either way. */
+/** The knight's stock response to anything that counts as damage. */
 export function missLine(type: { name: string; armour: string }): FightLine[] {
   return [
-    [`An attack with ${type.name} is ineffective.`, 'error'],
-    [`The knight is wearing ${type.name}-proof ${type.armour}.`, 'dim'],
+    [`The knight is impervious to your ${type.name}.`, 'error'],
+    [`It is wearing ${type.armour}.`, 'dim'],
   ];
 }
 
@@ -142,13 +142,17 @@ export const GENERIC_MISSES: string[] = [
  */
 export const VULNERABILITIES: {
   match: string[];
-  /** The heckle that gives this one away, when the knight gets bored. */
-  tell: string;
+  /** Three escalating giveaways: barely there, then unmistakable. */
+  tells: string[][];
   lines: FightLine[];
 }[] = [
   {
     match: ['hornet', 'hornets', 'wasp', 'bee', 'bees', 'venom', 'sting', 'swarm'],
-    tell: "Nothing gets through this armour. Nothing. Well — nothing larger than, say, a stinging insect. Hypothetically.",
+    tells: [
+      ['... wait.', 'Was that a hornet?', '... No. Nothing. ON GUARD.'],
+      ['The knight swats at the air, then pretends it was a stretch.', '"I am not AFRAID of insects, if that is what you are implying."'],
+      ['"Look — the helmet does not seal at the neck. It is a known issue.', 'Do not get any ideas. Especially not stinging ones."'],
+    ],
     lines: [
       ['You release a hornet.', 'normal'],
       ['', 'normal'],
@@ -161,7 +165,11 @@ export const VULNERABILITIES: {
   },
   {
     match: ['squirrel', 'squirrels'],
-    tell: 'I have guarded this port for nine years. Nothing distracts me. Not wildlife. Definitely not small rodents.',
+    tells: [
+      ['The knight\'s head snaps to the left at nothing at all.', '"... I thought I saw something move."'],
+      ['"Nine years I have guarded this port. Nothing distracts me.', 'Not wildlife. Not rodents. Not the small fast ones."'],
+      ['"If anyone shouts a certain woodland animal at me I WILL look.', 'I know I will. I have made peace with it."'],
+    ],
     lines: [
       ['You point past the knight and shout "SQUIRREL!"', 'normal'],
       ['', 'normal'],
@@ -173,7 +181,11 @@ export const VULNERABILITIES: {
   },
   {
     match: ['refrigerator', 'fridge', 'freezer', 'appliance'],
-    tell: 'My only weakness is unfinished business. Appliances left on at home. That kind of thing. Forget I said it.',
+    tells: [
+      ['The knight pauses mid-swing, staring into the middle distance.', '"... did I leave something on?"'],
+      ['"It is fine. It is FINE. The kitchen is fine." It is not convinced.'],
+      ['"My one weakness is unfinished business. Appliances. At home.', 'Forget I said that. Forget I said appliances."'],
+    ],
     lines: [
       ['You ask: "Is your refrigerator running?"', 'normal'],
       ['', 'normal'],
@@ -188,7 +200,11 @@ export const VULNERABILITIES: {
   },
   {
     match: ['compliment', 'nice armour', 'nice armor', 'flatter', 'praise', 'thank'],
-    tell: 'And do not try being NICE to me. I get quite enough of that. None at all, in fact. Not one compliment in nine years.',
+    tells: [
+      ['The knight adjusts its pauldrons, slightly, as if you might notice.'],
+      ['"Nobody ever says anything about the armour. Nine years.', 'Not that I keep count."'],
+      ['"You could just SAY something nice. About the polish, say.', 'Hypothetically. Then I would have to let you past, obviously."'],
+    ],
     lines: [
       ['You tell the knight its armour looks genuinely well maintained.', 'normal'],
       ['', 'normal'],
@@ -202,17 +218,24 @@ export const VULNERABILITIES: {
   },
 ];
 
-/** Escalating heckles. Each one leaks a different way through. */
-export function heckle(state: FightState): FightLine[] {
+/**
+ * THE LEAK
+ * The knight gives itself away, and immediately covers for it.
+ *
+ * Three tiers, getting less subtle each time, so an attentive player catches
+ * the first one and nobody is ever permanently stuck. It is appended to a
+ * failed attack rather than delivered as a speech: a tic the knight cannot
+ * suppress reads far better than it announcing its own weakness.
+ */
+export function leak(state: FightState): FightLine[] {
   const vulnerability = VULNERABILITIES[state.heckle % VULNERABILITIES.length];
+  // Tier rises with every leak, so help arrives quickly if it is needed.
+  const tier = Math.min(state.heckle, vulnerability.tells.length - 1);
   state.heckle += 1;
 
   return [
     ['', 'normal'],
-    ['The knight lowers its sword and sighs.', 'dim'],
-    ['', 'normal'],
-    [`"${vulnerability.tell}"`, 'cyan'],
-    ['', 'normal'],
+    ...vulnerability.tells[tier].map((line: string): FightLine => [line, 'cyan']),
   ];
 }
 
@@ -247,7 +270,7 @@ export function attack(
       ['', 'normal'],
       [`The firewall knight recovers 10 HP. (${state.hp} HP)`, 'error'],
     ];
-    if (state.misses % 3 === 0) lines.push(...heckle(state));
+    if (state.misses % 3 === 0) lines.push(...leak(state));
     return { lines, won: false };
   }
 
@@ -262,7 +285,7 @@ export function attack(
   lines.push(['', 'normal'], [`Firewall knight: ${state.hp} HP`, 'dim']);
 
   // Every third failure, it gets bored and says too much.
-  if (state.misses % 3 === 0) lines.push(...heckle(state));
+  if (state.misses % 3 === 0) lines.push(...leak(state));
 
   return { lines, won: false };
 }

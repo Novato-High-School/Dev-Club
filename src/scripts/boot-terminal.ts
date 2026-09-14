@@ -445,6 +445,27 @@ export function startBootTerminal(options: BootOptions): void {
       return;
     }
 
+    // Reading the notes mid-standoff is allowed, and does not count as a
+    // failed attack. This is the safety net, and being stuck in the fight is
+    // exactly when somebody needs it.
+    if (/^(cat +)?\.?secrets$/i.test(raw.trim())) {
+      print('');
+      print('You check the notes. The knight waits, politely.', 'dim');
+      await printSecrets();
+      return;
+    }
+
+    // Asking for help mid-fight gets fight help, not the server's menu.
+    if (/^help$/i.test(raw.trim())) {
+      print('');
+      print('Type an attack. Anything you like.', 'normal');
+      print('Type run to back out.', 'dim');
+      print('');
+      print('The knight waits. It is in no hurry at all.', 'dim');
+      print('');
+      return;
+    }
+
     const { lines, won } = attack(raw, state);
     print('');
     await printSequence(lines, reducedMotion ? 0 : 70);
@@ -552,7 +573,6 @@ export function startBootTerminal(options: BootOptions): void {
         await printSequence(egg.lines, reducedMotion ? 0 : 60);
       }
 
-      recordEgg(eggName);
       print('');
       return;
     }
@@ -582,46 +602,43 @@ export function startBootTerminal(options: BootOptions): void {
   // Easter eggs
   // ---------------------------------------------------------------------
 
-  /** Every hidden command this browser has found so far. */
-  const foundEggs = loadFoundEggs();
-  const totalEggs = Object.keys(EASTER_EGGS).length;
-
-  /** Notes that an egg has been found, and says so the first time. */
-  function recordEgg(eggName: string): void {
-    if (foundEggs.has(eggName)) return;
-    foundEggs.add(eggName);
-    saveFoundEggs(foundEggs);
-    print('');
-    print(`[ found ${foundEggs.size} of ${totalEggs} hidden commands ]`, 'success');
-  }
-
   /**
-   * The treasure map. Shows what has been found, and a clue for what has not,
-   * so hunting is a trail rather than a guessing game.
+   * `.secrets` — notes left behind by whoever tried this before you.
+   *
+   * This used to be a checklist of hidden commands with a "found 3 of 14"
+   * counter, which was a second game sitting beside the first one and broke
+   * the fiction every time you opened it. It is now part of the story: an
+   * abandoned scratchpad that points at the fight and says, without saying,
+   * that the way through is not a weapon.
+   *
+   * It is also the safety net. Anyone who cannot work out what to do can read
+   * this and get a push in the right direction.
    */
   async function printSecrets(): Promise<void> {
-    print('');
-    print('# .secrets', 'dim');
-    print('');
-    print(`You have found ${foundEggs.size} of ${totalEggs} hidden commands.`, 'gold');
-    print('');
-
-    for (const [eggName, egg] of Object.entries(EASTER_EGGS)) {
-      if (foundEggs.has(eggName)) {
-        print(`  [x] ${eggName}`, 'success');
-      } else {
-        print(`  [ ] ??? — ${egg.hint}`, 'dim');
-      }
-    }
-
-    print('');
-    if (foundEggs.size === totalEggs) {
-      print('All of them. Genuinely well done.', 'success');
-      print('Now go add one of your own — src/scripts/boot-terminal.ts', 'gold');
-    } else {
-      print('Keep typing things. That is the whole game.', 'dim');
-    }
-    print('');
+    await printSequence(
+      [
+        ['', 'normal'],
+        ['# .secrets', 'dim'],
+        ['# left by whoever was here before you', 'dim'],
+        ['', 'normal'],
+        ['Tried everything sharp. Everything on fire.', 'normal'],
+        ['Everything that counts as a damage type.', 'normal'],
+        ['None of it works. Do not waste your afternoon on it', 'normal'],
+        ['like I did.', 'normal'],
+        ['', 'normal'],
+        ['But it flinches.', 'gold'],
+        ['', 'normal'],
+        ['I have watched it flinch four separate times and I still', 'normal'],
+        ['do not know at what. Whatever gets through that armour', 'normal'],
+        ['is not a weapon.', 'normal'],
+        ['', 'normal'],
+        ['Keep it talking. It cannot help itself.', 'cyan'],
+        ['', 'normal'],
+        ['I ran out of lunch break. You might not.', 'dim'],
+        ['', 'normal'],
+      ],
+      reducedMotion ? 0 : 60,
+    );
   }
 
   /** A short burst of falling characters, because of course. */
@@ -739,7 +756,6 @@ export function startBootTerminal(options: BootOptions): void {
       void (async () => {
         print('');
         await printSequence(EASTER_EGGS.konami.lines, reducedMotion ? 0 : 90);
-        recordEgg('konami');
         print('');
       })();
     }
@@ -807,34 +823,9 @@ function revealSite(): void {
 }
 
 /**
- * WHICH EASTER EGGS HAS THIS PERSON FOUND?
- * Kept in the browser so the count survives reloads. It is only ever a list of
- * command names — nothing about who the visitor is.
- */
-const EGG_STORAGE_KEY = 'devclub.eggs.v1';
-
-function loadFoundEggs(): Set<string> {
-  try {
-    const raw = localStorage.getItem(EGG_STORAGE_KEY);
-    return new Set(raw ? (JSON.parse(raw) as string[]) : []);
-  } catch {
-    // Storage blocked (private browsing). The eggs still work, they just will
-    // not be remembered, which is a perfectly fine way to fail.
-    return new Set();
-  }
-}
-
-function saveFoundEggs(found: Set<string>): void {
-  try {
-    localStorage.setItem(EGG_STORAGE_KEY, JSON.stringify([...found]));
-  } catch {
-    // Nothing to do.
-  }
-}
-
-/**
  * Did the visitor explicitly ask for the intro? The banner's QR code adds
- * "?boot" to the address so a scan always starts the challenge.
+ * "?boot" to the address so a scan always starts the break-in, whether or not
+ * they have been to the site before.
  */
 export function wantsBoot(): boolean {
   try {

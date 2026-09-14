@@ -290,14 +290,25 @@ you tried.
 ```ts
 {
   match: ['squirrel'],
-  tell: 'Nothing distracts me. Definitely not small rodents.',
+  tells: [
+    ['The knight\'s head snaps to the left at nothing at all.'],
+    ['"Nothing distracts me. Not wildlife. Not the small fast ones."'],
+    ['"If anyone shouts a certain woodland animal at me I WILL look."'],
+  ],
   lines: [['You point past the knight and shout "SQUIRREL!"', 'normal']],
 }
 ```
 
-`tell` is the heckle that gives it away — the knight leaks one every third
-failed attack, so nobody gets permanently stuck. Ways through work the first
-time somebody tries them; they never need to fail first.
+`tells` are three escalating giveaways. The knight leaks one every third failed
+attack, and they get less subtle each time — the first is a tic it tries to
+cover, the last all but tells you. So an attentive player catches it early and
+nobody is ever permanently stuck.
+
+Ways through work the first time somebody tries them; they never need to fail
+first.
+
+Anyone properly stuck can type `cat .secrets` — even mid-fight — and read the
+notes left by the last person who tried.
 
 Keep them silly and keep them kind. The knight is pompous, not mean, and the
 joke is never at a visitor's expense.
@@ -306,7 +317,9 @@ joke is never at a visitor's expense.
 
 ## Add an easter egg to the terminal
 
-There are hidden commands too, outside the fight. Adding one is three lines in
+There are hidden commands too, outside the fight — `ls -a`, `matrix`, `fortune`
+and others. They are not catalogued anywhere on purpose; they are texture, not
+a checklist. Adding one is three lines in
 [`src/scripts/boot-terminal.ts`](src/scripts/boot-terminal.ts), in the
 `EASTER_EGGS` block:
 
