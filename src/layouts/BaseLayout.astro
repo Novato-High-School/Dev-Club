@@ -95,7 +95,8 @@ const showOverlayBoot = BOOT_MODE === 'skippable' || BOOT_MODE === 'hard';
           is:inline
           set:html={`
             try {
-              if (!localStorage.getItem(${JSON.stringify(BOOT_STORAGE_KEY)})) {
+              var asked = location.search.indexOf('boot') !== -1;
+              if (asked || !localStorage.getItem(${JSON.stringify(BOOT_STORAGE_KEY)})) {
                 document.documentElement.setAttribute('data-booting', '');
               }
             } catch (e) {

@@ -13,7 +13,7 @@ import type { APIRoute } from 'astro';
 import QRCode from 'qrcode';
 
 import { posterSVG } from '../../lib/banner';
-import { BANNER_SIZES, SITE_URL } from '../../config/site';
+import { BANNER_SIZES, SITE_URL, QR_TARGET_QUERY } from '../../config/site';
 import { href } from '../../lib/href';
 
 export function getStaticPaths() {
@@ -29,7 +29,7 @@ export function getStaticPaths() {
  * than no QR code at all.
  */
 export async function qrCode(): Promise<{ path: string; size: number }> {
-  const qr = QRCode.create(`${SITE_URL}${href('/')}`, {
+  const qr = QRCode.create(`${SITE_URL}${href('/')}${QR_TARGET_QUERY}`, {
     // 'M' survives roughly 15% of the code being damaged or obscured, which is
     // about right for something printed and stood outdoors.
     errorCorrectionLevel: 'M',

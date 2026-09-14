@@ -179,6 +179,23 @@ export const TOPICS: { icon: string; label: string }[] = [
  * inches tall on the finished print no matter which size you pick.
  */
 export const BANNER_SIZES: { id: string; inchesWide: number; inchesTall: number }[] = [
+  // Portrait — the tall club-fair banners.
   { id: '2x4', inchesWide: 24, inchesTall: 48 },
   { id: '1.6x3', inchesWide: 19.2, inchesTall: 36 },
+
+  // Landscape — the same two sizes turned on their side, for a table front,
+  // a wall, or hanging above a booth. The layout is redrawn rather than
+  // stretched: a wide banner wants its content in a row, not a column.
+  { id: '4x2', inchesWide: 48, inchesTall: 24 },
+  { id: '3x1.6', inchesWide: 36, inchesTall: 19.2 },
 ];
+
+/**
+ * Where the banner's QR code sends people.
+ *
+ * Not the plain home page: "?boot" always opens the terminal challenge, even
+ * for somebody who has been to the site before. Scanning a banner should drop
+ * you straight into the interesting bit — and the terminal has a Skip button,
+ * so nobody is trapped by it.
+ */
+export const QR_TARGET_QUERY = '?boot';

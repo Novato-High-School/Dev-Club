@@ -164,12 +164,202 @@ export async function ogImageSVG(): Promise<string> {
 }
 
 /**
+ * The QR block: white card, code, and the line that tells people why to scan.
+ *
+ * The code points at "?boot", which always opens the terminal challenge. So
+ * the invitation is to break into the club, not to read a website — a much
+ * better reason to get a phone out while walking past a table. The terminal
+ * has a Skip button, which the caption says, so nobody feels trapped.
+ *
+ * The caption sits above the code on a tall banner and beside it on a wide
+ * one, because that is where the room is.
+ */
+async function qrBlock(
+  qr: { path: string; size: number },
+  options: {
+    /** Left edge of the code itself. */
+    x: number;
+    /** Top edge of the code itself. */
+    y: number;
+    /** Width and height of the code. */
+    side: number;
+    captionSize: number;
+    lines: [string, string];
+    placement: 'above' | 'left';
+    /** Gap between caption and code. */
+    gap: number;
+  },
+): Promise<string> {
+  const { x, y, side, captionSize, lines, placement, gap } = options;
+  const pad = side * 0.08;
+
+  const caption =
+    placement === 'above'
+      ? await Promise.all([
+          outline(lines[0], COLOR.bone, {
+            x: x + side / 2, y: y - gap - captionSize * 0.85,
+            size: captionSize, family: 'display', weight: 700, anchor: 'middle',
+          }),
+          outline(lines[1], COLOR.muted, {
+            x: x + side / 2, y: y - gap + captionSize * 0.3,
+            size: captionSize * 0.66, family: 'mono', anchor: 'middle',
+          }),
+        ])
+      : await Promise.all([
+          outline(lines[0], COLOR.bone, {
+            x: x - gap, y: y + side * 0.45,
+            size: captionSize, family: 'display', weight: 700, anchor: 'end',
+          }),
+          outline(lines[1], COLOR.muted, {
+            x: x - gap, y: y + side * 0.72,
+            size: captionSize * 0.62, family: 'mono', anchor: 'end',
+          }),
+        ]);
+
+  return `${caption.join('')}
+  <g transform="translate(${x} ${y})">
+    <rect x="${-pad}" y="${-pad}" width="${side + pad * 2}" height="${side + pad * 2}" fill="${COLOR.bone}" rx="${pad * 0.6}"/>
+    <g transform="scale(${side / qr.size})" fill="${COLOR.ink}" shape-rendering="crispEdges">
+      <path d="${qr.path}"/>
+    </g>
+  </g>`;
+}
+
+/**
  * THE PRINTED BANNER — tall and narrow, for the club fair.
  *
  * Laid out at 50 units per inch, so a font size of 100 really is two inches
  * tall on the finished print. Sized for reading from across a quad.
  */
 export async function posterSVG(
+  inchesWide: number,
+  inchesTall: number,
+  qr: { path: string; size: number },
+): Promise<string> {
+  // A wide banner wants its content in a row, not a tall one squashed. The two
+  // shapes get genuinely different layouts rather than one being stretched.
+  return inchesWide > inchesTall
+    ? landscapeSVG(inchesWide, inchesTall, qr)
+    : portraitSVG(inchesWide, inchesTall, qr);
+}
+
+/**
+ * THE LANDSCAPE BANNER — wide and short. For a table front, a wall, or hanging
+ * above a booth.
+ *
+ * The identity stacks in the middle, the topics run along one row, and the
+ * meeting details and the QR code sit side by side underneath.
+ */
+async function landscapeSVG(
+  inchesWide: number,
+  inchesTall: number,
+  qr: { path: string; size: number },
+): Promise<string> {
+  const UNITS_PER_INCH = 50;
+  const W = inchesWide * UNITS_PER_INCH;
+  const H = inchesTall * UNITS_PER_INCH;
+  const mid = W / 2;
+
+  const topics = TOPICS;
+  const logoSize = H * 0.095;
+  // Spread the logos evenly across the middle 88% of the width.
+  const first = W * 0.06;
+  const span = W * 0.88;
+  const step = span / topics.length;
+  const topicsCy = H * 0.545;
+
+  // The bottom band: meeting details on the left, QR on the right. Both start
+  // below the topic labels, which is what the previous version got wrong.
+  const bandTop = H * 0.7;
+  const boxLeft = W * 0.06;
+  const boxWidth = W * 0.38;
+  const boxHeight = H * 0.22;
+
+  const qrSide = H * 0.22;
+  const qrX = W * 0.94 - qrSide;
+
+  const heading = await Promise.all([
+    outline('$ ./join.sh', COLOR.muted, {
+      x: mid, y: H * 0.115, size: H * 0.045, family: 'mono', anchor: 'middle',
+    }),
+    outlineText(
+      [
+        { text: 'while', fill: COLOR.gold },
+        { text: ' { ', fill: COLOR.muted },
+        { text: 'Dev Club', fill: COLOR.bone },
+        { text: ' }', fill: COLOR.muted },
+      ],
+      { x: mid, y: H * 0.28, size: H * 0.14, family: 'mono', weight: 700, anchor: 'middle' },
+    ),
+    outline('Build real things. Publish them in the open.', COLOR.bone, {
+      x: mid, y: H * 0.375, size: H * 0.05, family: 'display', weight: 700, anchor: 'middle',
+    }),
+    outline('No experience needed.', COLOR.gold, {
+      x: mid, y: H * 0.44, size: H * 0.045, family: 'display', anchor: 'middle',
+    }),
+  ]);
+
+  // Logo above label, centred in each slot — a row is too tight for the
+  // side-by-side arrangement the portrait version uses.
+  const topicMarks = await Promise.all(
+    topics.map(async (topic, i) => {
+      const cx = first + step * (i + 0.5);
+      const cy = topicsCy;
+      const labelSize = logoSize * 0.44;
+      const label = await outline(topic.label, COLOR.muted, {
+        x: cx, y: cy + logoSize * 0.95, size: labelSize, family: 'mono', anchor: 'middle',
+      });
+      return `${logo(topic.icon, cx, cy, logoSize, COLOR.bone)}${label}`;
+    }),
+  );
+
+  const meeting = await Promise.all([
+    outline(CLUB.meetingDay, COLOR.gold, {
+      x: boxLeft + boxWidth / 2, y: bandTop + boxHeight * 0.45,
+      size: H * 0.08, family: 'mono', weight: 700, anchor: 'middle',
+    }),
+    outline(`Lunch \u00b7 Room ${CLUB.meetingRoom}`, COLOR.bone, {
+      x: boxLeft + boxWidth / 2, y: bandTop + boxHeight * 0.8,
+      size: H * 0.055, family: 'mono', anchor: 'middle',
+    }),
+    outline(`${SITE_URL.replace('https://', '')}${BASE_PATH}`, COLOR.muted, {
+      x: mid, y: H * 0.965, size: H * 0.035, family: 'mono', anchor: 'middle',
+    }),
+  ]);
+
+  const qrArt = await qrBlock(qr, {
+    x: qrX,
+    y: bandTop,
+    side: qrSide,
+    captionSize: H * 0.055,
+    lines: ['Scan to break in', '14 hidden commands'],
+    placement: 'left',
+    gap: W * 0.015,
+  });
+
+  return `<svg xmlns="http://www.w3.org/2000/svg"
+     width="${inchesWide}in" height="${inchesTall}in"
+     viewBox="0 0 ${W} ${H}">
+  <rect width="${W}" height="${H}" fill="${COLOR.ink}"/>
+  ${honeycomb(W, H, H / 7, 0.13)}
+
+  <rect x="0" y="0" width="${W}" height="${H * 0.022}" fill="${COLOR.gold}"/>
+  <rect x="0" y="${H - H * 0.022}" width="${W}" height="${H * 0.022}" fill="${COLOR.gold}"/>
+
+  ${heading.join('\n  ')}
+  ${topicMarks.join('\n  ')}
+
+  <rect x="${boxLeft}" y="${bandTop}" width="${boxWidth}" height="${boxHeight}" rx="${H * 0.03}" fill="${COLOR.surface}" stroke="${COLOR.edge}" stroke-width="${H * 0.006}"/>
+  ${meeting.join('\n  ')}
+
+  ${qrArt}
+</svg>`;
+}
+
+/**
+ * THE PORTRAIT BANNER — tall and narrow, for the club fair.
+ */
+async function portraitSVG(
   inchesWide: number,
   inchesTall: number,
   qr: { path: string; size: number },
@@ -188,8 +378,7 @@ export async function posterSVG(
   const columnCentres = [W * 0.29, W * 0.71];
 
   const infoTop = topicTop + rows * rowHeight + H * 0.02;
-  const qrSide = H * 0.105;
-  const qrScale = qrSide / qr.size;
+  const qrSide = H * 0.1;
 
   const heading = await Promise.all([
     outline('$ ./join.sh', COLOR.muted, {
@@ -247,13 +436,20 @@ export async function posterSVG(
     outline(`Lunch \u00b7 Room ${CLUB.meetingRoom}`, COLOR.bone, {
       x: mid, y: infoTop + H * 0.09, size: W * 0.048, family: 'mono', anchor: 'middle',
     }),
-    outline('Scan to see what we build', COLOR.muted, {
-      x: mid, y: H * 0.815, size: W * 0.042, family: 'display', anchor: 'middle',
-    }),
     outline(`${SITE_URL.replace('https://', '')}${BASE_PATH}`, COLOR.muted, {
       x: mid, y: H * 0.975, size: W * 0.033, family: 'mono', anchor: 'middle',
     }),
   ]);
+
+  const qrArt = await qrBlock(qr, {
+    x: mid - qrSide / 2,
+    y: H * 0.845,
+    side: qrSide,
+    captionSize: W * 0.045,
+    lines: ['Scan to break in', '14 hidden commands. Skip anytime.'],
+    placement: 'above',
+    gap: H * 0.015,
+  });
 
   return `<svg xmlns="http://www.w3.org/2000/svg"
      width="${inchesWide}in" height="${inchesTall}in"
@@ -269,12 +465,7 @@ export async function posterSVG(
 
   <rect x="${W * 0.08}" y="${infoTop}" width="${W * 0.84}" height="${H * 0.115}" rx="${W * 0.02}" fill="${COLOR.surface}" stroke="${COLOR.edge}" stroke-width="${W * 0.004}"/>
 
-  <g transform="translate(${mid - qrSide / 2} ${H * 0.835})">
-    <rect x="${-H * 0.008}" y="${-H * 0.008}" width="${qrSide + H * 0.016}" height="${qrSide + H * 0.016}" fill="${COLOR.bone}" rx="${H * 0.004}"/>
-    <g transform="scale(${qrScale})" fill="${COLOR.ink}" shape-rendering="crispEdges">
-      <path d="${qr.path}"/>
-    </g>
-  </g>
+  ${qrArt}
 
   ${footer.join('\n  ')}
 </svg>`;

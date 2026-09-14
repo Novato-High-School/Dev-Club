@@ -80,6 +80,50 @@ async function loadFace(name: FaceName): Promise<opentype.Font> {
   );
 }
 
+/**
+ * Turns a glyph outline into SVG path data.
+ *
+ * We do this ourselves rather than using opentype's own toPathData, which has
+ * a bug that silently corrupts coordinates. Its rounding does this:
+ *
+ *     +(Math.round(decimalPart + "e+" + places) + "e-" + places)
+ *
+ * When a computed point lands a hair above a whole number — and they
+ * constantly do, because glyph positions are multiplied by a scale factor —
+ * the decimal part is something like 5.68e-14. Glued into that string it
+ * becomes "5.68e-14e+2", which is not a number, so the coordinate comes out as
+ * NaN. Any shape containing a NaN silently vanishes, and the file still opens
+ * and still looks fine. That is how a banner came to be missing the word
+ * "while".
+ *
+ * toFixed has no such problem with exponent notation, so this is both correct
+ * and simpler.
+ */
+function commandsToPathData(commands: opentype.PathCommand[]): string {
+  const n = (value: number) => {
+    const rounded = Number(value.toFixed(2));
+    // Avoid "-0" appearing in the output.
+    return Object.is(rounded, -0) ? 0 : rounded;
+  };
+
+  return commands
+    .map((c) => {
+      switch (c.type) {
+        case 'M':
+          return `M${n(c.x)} ${n(c.y)}`;
+        case 'L':
+          return `L${n(c.x)} ${n(c.y)}`;
+        case 'C':
+          return `C${n(c.x1)} ${n(c.y1)} ${n(c.x2)} ${n(c.y2)} ${n(c.x)} ${n(c.y)}`;
+        case 'Q':
+          return `Q${n(c.x1)} ${n(c.y1)} ${n(c.x)} ${n(c.y)}`;
+        default:
+          return 'Z';
+      }
+    })
+    .join('');
+}
+
 /** One stretch of text in a single colour. */
 export interface Run {
   text: string;
@@ -136,12 +180,13 @@ export async function outlineText(runs: Run[], options: TextOptions): Promise<st
       // The cursor is rounded too, for the same reason as x and y above — it
       // has accumulated the widths of earlier runs and is rarely a whole
       // number by the time a later run uses it.
-      const outline = font.getPath(run.text, round(cursor), y, size).toPathData(2);
+      const outline = commandsToPathData(
+        font.getPath(run.text, round(cursor), y, size).commands,
+      );
 
-      // Stop the build rather than ship artwork with words missing from it.
-      // A NaN in path data makes that whole shape disappear, and the file
-      // still opens and still looks plausible — which is exactly how this got
-      // as far as a printed-banner preview before anybody noticed.
+      // Belt and braces. The serializer above should make this impossible, but
+      // artwork with words silently missing is bad enough to be worth a second
+      // check — the file still opens and still looks plausible without them.
       if (outline.includes('NaN')) {
         throw new Error(
           `Outlining "${run.text}" produced invalid path data. This is usually a ` +

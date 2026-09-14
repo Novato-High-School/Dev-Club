@@ -72,10 +72,14 @@ same palette and fonts as the website, so nothing can drift out of sync.
 | Address | What it is |
 | --- | --- |
 | `/og.png` | 1200×630 link preview. Shows up automatically when the site is pasted into Remind, Discord or a text |
-| `/banner/2x4.svg` | 2ft × 4ft printed banner, vector |
-| `/banner/2x4.png` | The same at 150 dpi, for print shops that will not take vector |
-| `/banner/1.6x3.svg` | 1.6ft × 3ft version |
-| `/banner/1.6x3.png` | The same, raster |
+| `/banner/2x4.svg` · `.png` | 2ft × 4ft, portrait |
+| `/banner/1.6x3.svg` · `.png` | 1.6ft × 3ft, portrait |
+| `/banner/4x2.svg` · `.png` | 4ft × 2ft, landscape |
+| `/banner/3x1.6.svg` · `.png` | 3ft × 1.6ft, landscape |
+
+The landscape versions are laid out separately rather than stretched — a wide
+banner wants its content in a row. Sizes live in `BANNER_SIZES` in the config;
+anything wider than it is tall gets the landscape treatment automatically.
 
 Send a print shop the **.svg** if they will take it — it is vector, so it stays
 sharp at any size. All of the lettering is converted to outlines, which is the
@@ -96,8 +100,15 @@ spaces itself out for however many there are.
 no dots or spaces, so Node.js is `nodedotjs` and Azure is `microsoftazure`. If
 the name is wrong the build stops and tells you.
 
-The banner also carries a QR code to the site, generated automatically, so
-nobody has to type a URL off a four-foot banner.
+### The QR code
+
+Every banner carries one, and it does **not** point at the plain home page. It
+points at `?boot`, which opens the terminal challenge even for somebody who has
+been to the site before — so scanning a banner drops you straight into the
+interesting part rather than a description of it.
+
+The terminal keeps its Skip button, so it is an invitation, not a toll gate.
+The caption on the banner says as much.
 
 **On the logos:** these are other companies' trademarks. Using them to say "we
 teach this" is normal, but do not recolour or restyle them, and do not imply
