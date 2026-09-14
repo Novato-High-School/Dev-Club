@@ -1,30 +1,32 @@
-# THE WRITE-UP NUDGE
-# ==================
-# On the afternoon of a meeting, if nobody has written it up, this opens an
-# issue asking somebody to. It links straight to the editor, so claiming it is
-# one click.
+# THE NOTES TASK
+# ==============
+# On the morning of a meeting, opens an issue asking somebody to take notes.
+# When the notes land, the same job closes it.
 #
-# WHY THE SAME DAY: the people who were in the room are still in the building
-# and it is still fresh. By the next morning the meeting is a blur and the
-# issue is a chore.
+# WHY THE MORNING: taking notes works when it is a job somebody accepts at the
+# start of a meeting, not a request to reconstruct one from memory afterwards.
+# At a lunch meeting the five minutes after the bell are exactly when people
+# leave. If the task already exists, it can be claimed in the room.
 #
-# It does nothing at all on days with no meeting, and nothing on a meeting that
-# is already written up, so most runs finish in seconds having decided there is
-# nothing to do.
+# It also means one issue does two jobs. It starts as a task to claim; if it is
+# still open tomorrow it has become the reminder, with nothing else running.
+#
+# Most days there is no meeting and the job finishes in seconds.
 
-name: Ask for meeting notes
+name: Meeting notes task
 
 on:
-  # 23:17 UTC is mid-afternoon in California — the same day as the meeting,
-  # comfortably after a lunchtime one, in both halves of the year.
+  # 15:17 UTC is early morning in California — before school, on the day of
+  # the meeting, in both halves of the year.
   #
-  # Daylight saving shifts this between 15:17 and 16:17 local. Either is fine;
-  # what matters is that it stays on the same calendar day, which it does.
+  # Daylight saving shifts this between 07:17 and 08:17 local. Either is fine:
+  # what matters is that it lands on the right calendar day and before lunch,
+  # which it does.
   #
   # The odd minute is deliberate: scheduled jobs get delayed when everybody
   # picks the top of the hour.
   schedule:
-    - cron: '17 23 * * *'
+    - cron: '17 15 * * *'
 
   # So it can be tried by hand without waiting for a Monday.
   workflow_dispatch:
@@ -55,7 +57,7 @@ jobs:
       - name: Build the site
         run: npm run build
 
-      - name: Open an issue if today's meeting has no notes
+      - name: Open today's notes task, and close finished ones
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: node scripts/meeting-notes-issue.mjs
