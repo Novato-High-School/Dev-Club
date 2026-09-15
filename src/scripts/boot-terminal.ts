@@ -25,6 +25,7 @@ import {
   attack,
   newFight,
   KNIGHT_ART,
+  KNIGHT_ABLAZE,
   type FightState,
 } from './boss-fight';
 
@@ -407,16 +408,17 @@ export function startBootTerminal(options: BootOptions): void {
     fight = newFight();
 
     // Wipe the screen first. The terminal shows about eighteen lines, and the
-    // knight plus its introduction is most of that — without clearing, the
-    // art scrolls off the top before anybody has seen it.
+    // knight plus its greeting is exactly that — without clearing, the art
+    // scrolls off the top before anybody has seen it.
     screen.replaceChildren();
 
     await printSequence(KNIGHT_ART, reducedMotion ? 0 : 55);
+
+    // Two lines and no blank spacer: the unlit knight is fifteen rows and the
+    // screen holds seventeen, so this is exactly the room left over.
     await printSequence(
       [
-        ['', 'normal'],
         ['A FIREWALL KNIGHT blocks the way.', 'gold'],
-        ['', 'normal'],
         ['Type an attack. Or type run.', 'dim'],
       ],
       reducedMotion ? 0 : 120,
@@ -465,24 +467,27 @@ export function startBootTerminal(options: BootOptions): void {
       return;
     }
 
-    const { lines, art, won } = attack(raw, state);
+    const { lines, won } = attack(raw, state);
 
-    // An attack that comes with art gets a beat of its own. The terminal shows
-    // about eighteen lines, so a drawing and the knight's answer cannot both
-    // be on screen at once — printing them together would scroll the top of
-    // the picture away before anyone saw it. So: clear the screen, draw, hold
-    // it there, and only then let the answer scroll it off. Ordinary attacks
-    // skip all of this and the fight still reads as a conversation.
-    if (art) {
+    // THE SWORD LIGHTS.
+    // The knight met you with an unlit blade. Miss once and it sets the thing
+    // on fire — not because it needs to, but because it wants you to watch it
+    // happen. So this is a beat of its own: clear the screen, redraw the
+    // knight burning, and hold it there before the reply arrives. Printing the
+    // two together would scroll the fire off the top before anybody saw it.
+    //
+    // Once only, on the first failure. After that the knight is simply alight
+    // and stops making a production of it.
+    if (!won && state.misses === 1) {
       screen.replaceChildren();
       echo(raw);
-      // No blank line before the drawing: the screen fits the echoed command
-      // and sixteen rows exactly, and a spacer costs us the boots.
-      await printSequence(art, reducedMotion ? 0 : 55);
+      await printSequence(KNIGHT_ABLAZE, reducedMotion ? 0 : 55);
       // printSequence follows the newest line; put the view back to the top so
-      // the whole drawing is on screen for the pause.
+      // the whole knight is on screen for the pause.
       screen.scrollTop = 0;
       await wait(reducedMotion ? 700 : 1600);
+      print('');
+      print('The knight sets its own sword on fire. Purely to make a point.', 'dim');
     }
 
     print('');

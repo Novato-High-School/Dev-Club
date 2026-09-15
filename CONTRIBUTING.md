@@ -289,29 +289,29 @@ and each addition is one entry.
 `sword`, `axe` and `slash` all give the same answer. Make the armour specific:
 "flame-retardant tabard" is funnier than "fire-proof armour".
 
-### ASCII art on a damage type
+### Changing the knight
 
-A damage type can carry a picture. Add an `art` field and the terminal clears
-the screen, draws it, holds it for a beat, and only then prints the knight
-shrugging the attack off. The slashing entry uses `FLAMING_SWORD_ART`, so
-swinging a sword draws one — and then still fails.
+The knight is ASCII art by **Joan G. Stark**, and it has two states in
+`boss-fight.ts`. You meet `KNIGHT_ART`, whose sword is not lit. Your first
+failed attack swaps it for `KNIGHT_ABLAZE`, and the knight spends the rest of
+the fight holding a burning sword it did not need to light. That timing is the
+joke — arriving on fire is a threat, catching fire after you have already
+missed is showing off — so if you change one state, change the other to match.
 
-```ts
-{ match: ['sword'], name: 'slashing', armour: 'overlapping plate', art: FLAMING_SWORD_ART },
-```
+Three rules if you touch it, or add art of your own anywhere on the site:
 
-Three rules if you add art of your own:
-
-- **Credit the artist, and leave their signature in the drawing.** The flaming
-  sword is by Joan G. Stark; the `jgs` in the bottom-left corner is her mark
-  and stays there. Name whoever drew it in a comment above the art.
-- **Sixteen rows, forty columns, no caption.** The terminal shows about
-  eighteen lines and the echoed command takes one, so sixteen is the whole
-  budget — anything taller scrolls its own top off before it is seen, and
-  anything wider wraps on a phone. Put the words in the miss lines instead.
-- **Count your columns before and after any edit.** The sword only stayed
-  readable because the fire went into blank space and every other column
-  stayed exactly where it was.
+- **Credit the artist, and leave their signature in the drawing.** The `jgs` in
+  the bottom-left corner is her mark and it stays there. Name whoever drew it
+  in a comment above the art.
+- **Mind the row budget.** The terminal shows seventeen lines. The unlit knight
+  is 15, leaving two for the greeting; the burning one is 16, leaving one for
+  the echoed attack that lit it. Anything taller scrolls its own head off
+  before it is seen, and anything wider than about forty columns wraps on a
+  phone.
+- **Count your columns before and after any edit.** The flames are ours, added
+  to Stark's original. They only work because the fire went into blank space
+  and every other column stayed exactly where it was — which is also why the
+  knight does not jump sideways when the sword lights.
 
 ### A new taunt
 
