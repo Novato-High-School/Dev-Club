@@ -465,7 +465,26 @@ export function startBootTerminal(options: BootOptions): void {
       return;
     }
 
-    const { lines, won } = attack(raw, state);
+    const { lines, art, won } = attack(raw, state);
+
+    // An attack that comes with art gets a beat of its own. The terminal shows
+    // about eighteen lines, so a drawing and the knight's answer cannot both
+    // be on screen at once — printing them together would scroll the top of
+    // the picture away before anyone saw it. So: clear the screen, draw, hold
+    // it there, and only then let the answer scroll it off. Ordinary attacks
+    // skip all of this and the fight still reads as a conversation.
+    if (art) {
+      screen.replaceChildren();
+      echo(raw);
+      // No blank line before the drawing: the screen fits the echoed command
+      // and sixteen rows exactly, and a spacer costs us the boots.
+      await printSequence(art, reducedMotion ? 0 : 55);
+      // printSequence follows the newest line; put the view back to the top so
+      // the whole drawing is on screen for the pause.
+      screen.scrollTop = 0;
+      await wait(reducedMotion ? 700 : 1600);
+    }
+
     print('');
     await printSequence(lines, reducedMotion ? 0 : 70);
 

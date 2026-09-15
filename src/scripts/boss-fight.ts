@@ -58,6 +58,45 @@ export const KNIGHT_ART: FightLine[] = [
 ];
 
 /**
+ * THE FLAMING SWORD
+ * =================
+ * ASCII art by Joan G. Stark, whose signature ("jgs") is part of the drawing
+ * and stays in it. Her work is all over the early web; if you reuse ASCII art
+ * from anywhere, leave the artist's mark alone and name them in a comment,
+ * exactly like this.
+ *
+ * The only change we made to the original is the fire: the `|`, `(` and `)`
+ * strokes hugging the blade. Every other column is untouched, which is why the
+ * little tower on the right still lines up.
+ *
+ * It prints when somebody swings a blade at the knight, which is what almost
+ * everybody tries first. The sword looks magnificent. It does nothing. That is
+ * the joke, so please do not "fix" it by letting this win the fight.
+ *
+ * Sixteen rows, and no caption: the terminal shows about eighteen lines, and
+ * the echoed command and a blank take the other two. Anything longer scrolls
+ * its own top off. Keep new art inside that budget.
+ */
+export const FLAMING_SWORD_ART: FightLine[] = [
+  ['  \\|/', 'gold'],
+  ['|\\)|(          //', 'gold'],
+  [' \\\\(|||)      _!_', 'gold'],
+  ['  \\\\)|||(    /___\\', 'gold'],
+  ['   \\\\(|||)   [+++]', 'gold'],
+  ['    \\\\)|  _ _\\^^^/_ _', 'normal'],
+  ['     \\\\/ (    \'-\'  ( )', 'normal'],
+  ['     /( \\/ | {&}   /\\ \\', 'normal'],
+  ['       \\  / \\     / _> )', 'normal'],
+  ['        "`   >:::;-\'`""\'-.', 'normal'],
+  ['            /:::/         \\', 'normal'],
+  ['           /  /||   {&}   |', 'normal'],
+  ['          (  / (\\         /', 'normal'],
+  ['          / /   \\\'-.___.-\'', 'normal'],
+  ['    jgs _/ /     \\ \\', 'normal'],
+  ['       /___|    /___|', 'normal'],
+];
+
+/**
  * DAMAGE TYPES
  * Every one of these fails. The armour named beside each is the punchline, so
  * make new ones specific — "fire-proof gauntlets" is funnier than
@@ -70,6 +109,8 @@ export const DAMAGE_TYPES: {
   match: string[];
   name: string;
   armour: string;
+  /** Optional art printed before the knight shrugs the attack off. */
+  art?: FightLine[];
 }[] = [
   { match: ['fire', 'flame', 'burn', 'fireball', 'torch', 'lava', 'magma'], name: 'fire', armour: 'a flame-retardant tabard' },
   { match: ['ice', 'cold', 'frost', 'freeze', 'blizzard', 'snow'], name: 'ice', armour: 'a thermal underlayer' },
@@ -81,7 +122,7 @@ export const DAMAGE_TYPES: {
   { match: ['necrotic', 'death', 'decay', 'rot', 'undead'], name: 'necrotic', armour: 'a suspiciously fresh surcoat' },
   { match: ['radiant', 'holy', 'divine', 'smite', 'bless'], name: 'radiant', armour: 'a polarised visor' },
   { match: ['force', 'kinetic', 'telekinesis', 'push'], name: 'force', armour: 'reinforced bracing' },
-  { match: ['slash', 'sword', 'blade', 'axe', 'katana', 'machete', 'cut', 'sabre', 'saber'], name: 'slashing', armour: 'overlapping plate' },
+  { match: ['slash', 'sword', 'blade', 'axe', 'katana', 'machete', 'cut', 'sabre', 'saber'], name: 'slashing', armour: 'overlapping plate', art: FLAMING_SWORD_ART },
   { match: ['pierce', 'arrow', 'spear', 'bow', 'lance', 'dagger', 'stab', 'javelin', 'dart'], name: 'piercing', armour: 'chainmail, obviously' },
   { match: ['bludgeon', 'hammer', 'mace', 'club', 'bat', 'punch', 'kick', 'fist', 'smash'], name: 'bludgeoning', armour: 'a very good gambeson' },
   { match: ['water', 'flood', 'tide', 'wave', 'hydro'], name: 'water', armour: 'a waterproof cloak' },
@@ -243,7 +284,7 @@ function normalise(input: string): string {
 export function attack(
   input: string,
   state: FightState,
-): { lines: FightLine[]; won: boolean } {
+): { lines: FightLine[]; art?: FightLine[]; won: boolean } {
   const text = normalise(input);
 
   // A way through always works, first try or fiftieth.
@@ -273,8 +314,17 @@ export function attack(
     type.match.some((word) => text.includes(word)),
   );
 
+  // A damage type may bring art with it. The picture is the reward for a good
+  // guess, never a shortcut past the fight: the knight still shrugs the attack
+  // off exactly like any other. The extra beat below is the knight standing
+  // there, unimpressed, while you finish your big entrance.
   const lines: FightLine[] = damage
-    ? missLine(damage)
+    ? [
+        ...(damage.art
+          ? ([['The knight waits for you to finish.', 'dim'], ['', 'normal']] as FightLine[])
+          : []),
+        ...missLine(damage),
+      ]
     : [[GENERIC_MISSES[state.misses % GENERIC_MISSES.length], 'error']];
 
   lines.push(['', 'normal'], [`Firewall knight: ${state.hp} HP`, 'dim']);
@@ -282,5 +332,5 @@ export function attack(
   // Every third failure, it gets bored and says too much.
   if (state.misses % 3 === 0) lines.push(...leak(state));
 
-  return { lines, won: false };
+  return { lines, art: damage?.art, won: false };
 }

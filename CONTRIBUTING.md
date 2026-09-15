@@ -289,6 +289,30 @@ and each addition is one entry.
 `sword`, `axe` and `slash` all give the same answer. Make the armour specific:
 "flame-retardant tabard" is funnier than "fire-proof armour".
 
+### ASCII art on a damage type
+
+A damage type can carry a picture. Add an `art` field and the terminal clears
+the screen, draws it, holds it for a beat, and only then prints the knight
+shrugging the attack off. The slashing entry uses `FLAMING_SWORD_ART`, so
+swinging a sword draws one — and then still fails.
+
+```ts
+{ match: ['sword'], name: 'slashing', armour: 'overlapping plate', art: FLAMING_SWORD_ART },
+```
+
+Three rules if you add art of your own:
+
+- **Credit the artist, and leave their signature in the drawing.** The flaming
+  sword is by Joan G. Stark; the `jgs` in the bottom-left corner is her mark
+  and stays there. Name whoever drew it in a comment above the art.
+- **Sixteen rows, forty columns, no caption.** The terminal shows about
+  eighteen lines and the echoed command takes one, so sixteen is the whole
+  budget — anything taller scrolls its own top off before it is seen, and
+  anything wider wraps on a phone. Put the words in the miss lines instead.
+- **Count your columns before and after any edit.** The sword only stayed
+  readable because the fire went into blank space and every other column
+  stayed exactly where it was.
+
 ### A new taunt
 
 One line in `GENERIC_MISSES`, used when the knight cannot even classify what
