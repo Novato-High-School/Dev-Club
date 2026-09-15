@@ -48,7 +48,7 @@ export const SITE_URL_DISPLAY = 'Novato-High-School.github.io/Dev-Club/';
  *
  * Change the value below and save. That is the entire switch.
  */
-export const BOOT_MODE: 'skippable' | 'hard' | 'hero' | 'off' = 'skippable';
+export const BOOT_MODE: 'skippable' | 'hard' | 'hero' | 'off' = 'hard';
 
 /**
  * The name of the browser's memory slot that remembers a visitor already saw
@@ -94,7 +94,7 @@ export const CLUB = {
    * do NOT collect sign ups on this website: it is a static site, and student
    * submissions belong in a system the school already approved.
    */
-  interestFormUrl: '',
+  interestFormUrl: 'https://forms.gle/nLZ7bLXcHMQm3AT16',
 } as const;
 
 /**
