@@ -41,21 +41,48 @@ export function newFight(): FightState {
 }
 
 /**
- * THE KNIGHT ITSELF
- * =================
+ * THE KNIGHT, IN TWO STATES
+ * =========================
  * ASCII art by Joan G. Stark. Her signature ("jgs") is part of the drawing and
  * stays in it. If you ever reuse ASCII art from anywhere, leave the artist's
  * mark alone and name them in a comment, exactly like this.
  *
- * The only thing we changed is the fire: the `|`, `(` and `)` strokes hugging
- * the blade. Every other column is her original, untouched — which is why the
- * tower behind its shoulder still lines up.
+ * You meet KNIGHT_ART: sword drawn, and entirely unlit. Your first failed
+ * attack is what sets it alight, and from then on the knight is KNIGHT_ABLAZE.
+ * The fire is the knight showing off — it is not in any danger and never was,
+ * so this is pure theatre, and the timing is the joke. Arriving on fire would
+ * be a threat; catching fire only once you have already missed is smug.
  *
- * Sixteen rows, and that is the budget. The terminal shows about eighteen
- * lines and the two below this are the knight's greeting; anything taller
- * scrolls its own head off before anybody sees it.
+ * The fire is ours. Every other column is Stark's original, untouched, which
+ * is why the two states sit on top of each other exactly: the knight and the
+ * tower behind its shoulder do not move when the sword lights.
+ *
+ * ROW BUDGET, because the terminal only shows seventeen lines:
+ *   - KNIGHT_ART is 15, leaving two for the greeting under it.
+ *   - KNIGHT_ABLAZE is 16 — the extra row is the flame above the tip —
+ *     leaving one for the echoed attack that lit it.
+ * Anything taller scrolls its own head off before it is seen.
  */
 export const KNIGHT_ART: FightLine[] = [
+  ['|\\             //', 'normal'],
+  [' \\\\           _!_', 'normal'],
+  ['  \\\\         /___\\', 'normal'],
+  ['   \\\\        [+++]', 'normal'],
+  ['    \\\\    _ _\\^^^/_ _', 'normal'],
+  ['     \\\\/ (    \'-\'  ( )', 'normal'],
+  ['     /( \\/ | {&}   /\\ \\', 'normal'],
+  ['       \\  / \\     / _> )', 'normal'],
+  ['        "`   >:::;-\'`""\'-.', 'normal'],
+  ['            /:::/         \\', 'normal'],
+  ['           /  /||   {&}   |', 'normal'],
+  ['          (  / (\\         /', 'normal'],
+  ['          / /   \\\'-.___.-\'', 'normal'],
+  ['    jgs _/ /     \\ \\', 'normal'],
+  ['       /___|    /___|', 'normal'],
+];
+
+/** The same knight, once you have annoyed it. Lines up row-for-row with above. */
+export const KNIGHT_ABLAZE: FightLine[] = [
   ['  \\|/', 'gold'],
   ['|\\)|(          //', 'gold'],
   [' \\\\(|||)      _!_', 'gold'],

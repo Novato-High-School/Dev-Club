@@ -25,6 +25,7 @@ import {
   attack,
   newFight,
   KNIGHT_ART,
+  KNIGHT_ABLAZE,
   type FightState,
 } from './boss-fight';
 
@@ -413,11 +414,13 @@ export function startBootTerminal(options: BootOptions): void {
 
     await printSequence(KNIGHT_ART, reducedMotion ? 0 : 55);
 
-    // One line, no blank spacer. The knight is sixteen rows tall and the
-    // screen holds seventeen, so this is the only line left — which is why the
-    // challenge and the instruction share it.
+    // Two lines and no blank spacer: the unlit knight is fifteen rows and the
+    // screen holds seventeen, so this is exactly the room left over.
     await printSequence(
-      [['A FIREWALL KNIGHT blocks the way. Attack it, or type run.', 'gold']],
+      [
+        ['A FIREWALL KNIGHT blocks the way.', 'gold'],
+        ['Type an attack. Or type run.', 'dim'],
+      ],
       reducedMotion ? 0 : 120,
     );
 
@@ -465,6 +468,27 @@ export function startBootTerminal(options: BootOptions): void {
     }
 
     const { lines, won } = attack(raw, state);
+
+    // THE SWORD LIGHTS.
+    // The knight met you with an unlit blade. Miss once and it sets the thing
+    // on fire — not because it needs to, but because it wants you to watch it
+    // happen. So this is a beat of its own: clear the screen, redraw the
+    // knight burning, and hold it there before the reply arrives. Printing the
+    // two together would scroll the fire off the top before anybody saw it.
+    //
+    // Once only, on the first failure. After that the knight is simply alight
+    // and stops making a production of it.
+    if (!won && state.misses === 1) {
+      screen.replaceChildren();
+      echo(raw);
+      await printSequence(KNIGHT_ABLAZE, reducedMotion ? 0 : 55);
+      // printSequence follows the newest line; put the view back to the top so
+      // the whole knight is on screen for the pause.
+      screen.scrollTop = 0;
+      await wait(reducedMotion ? 700 : 1600);
+      print('');
+      print('The knight sets its own sword on fire. Purely to make a point.', 'dim');
+    }
 
     print('');
     await printSequence(lines, reducedMotion ? 0 : 70);
