@@ -94,7 +94,7 @@ export const CLUB = {
    * do NOT collect sign ups on this website: it is a static site, and student
    * submissions belong in a system the school already approved.
    */
-  interestFormUrl: '',
+  interestFormUrl: 'https://forms.gle/nLZ7bLXcHMQm3AT16',
 } as const;
 
 /**
