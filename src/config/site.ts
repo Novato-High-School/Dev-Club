@@ -48,7 +48,7 @@ export const SITE_URL_DISPLAY = 'Novato-High-School.github.io/Dev-Club/';
  *
  * Change the value below and save. That is the entire switch.
  */
-export const BOOT_MODE: 'skippable' | 'hard' | 'hero' | 'off' = 'skippable';
+export const BOOT_MODE: 'skippable' | 'hard' | 'hero' | 'off' = 'hard';
 
 /**
  * The name of the browser's memory slot that remembers a visitor already saw
