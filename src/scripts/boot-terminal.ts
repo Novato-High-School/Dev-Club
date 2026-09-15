@@ -407,18 +407,17 @@ export function startBootTerminal(options: BootOptions): void {
     fight = newFight();
 
     // Wipe the screen first. The terminal shows about eighteen lines, and the
-    // knight plus its introduction is most of that — without clearing, the
-    // art scrolls off the top before anybody has seen it.
+    // knight plus its greeting is exactly that — without clearing, the art
+    // scrolls off the top before anybody has seen it.
     screen.replaceChildren();
 
     await printSequence(KNIGHT_ART, reducedMotion ? 0 : 55);
+
+    // One line, no blank spacer. The knight is sixteen rows tall and the
+    // screen holds seventeen, so this is the only line left — which is why the
+    // challenge and the instruction share it.
     await printSequence(
-      [
-        ['', 'normal'],
-        ['A FIREWALL KNIGHT blocks the way.', 'gold'],
-        ['', 'normal'],
-        ['Type an attack. Or type run.', 'dim'],
-      ],
+      [['A FIREWALL KNIGHT blocks the way. Attack it, or type run.', 'gold']],
       reducedMotion ? 0 : 120,
     );
 
@@ -465,25 +464,7 @@ export function startBootTerminal(options: BootOptions): void {
       return;
     }
 
-    const { lines, art, won } = attack(raw, state);
-
-    // An attack that comes with art gets a beat of its own. The terminal shows
-    // about eighteen lines, so a drawing and the knight's answer cannot both
-    // be on screen at once — printing them together would scroll the top of
-    // the picture away before anyone saw it. So: clear the screen, draw, hold
-    // it there, and only then let the answer scroll it off. Ordinary attacks
-    // skip all of this and the fight still reads as a conversation.
-    if (art) {
-      screen.replaceChildren();
-      echo(raw);
-      // No blank line before the drawing: the screen fits the echoed command
-      // and sixteen rows exactly, and a spacer costs us the boots.
-      await printSequence(art, reducedMotion ? 0 : 55);
-      // printSequence follows the newest line; put the view back to the top so
-      // the whole drawing is on screen for the pause.
-      screen.scrollTop = 0;
-      await wait(reducedMotion ? 700 : 1600);
-    }
+    const { lines, won } = attack(raw, state);
 
     print('');
     await printSequence(lines, reducedMotion ? 0 : 70);
