@@ -4,14 +4,14 @@
  * =========
  * Meeting details, what to expect, and how to sign up.
  *
- * IMPORTANT — why there is no sign-up form on this page:
- * This website is a set of static files. It cannot receive or store anything,
- * and it should not: student sign-ups belong in a system the school already
- * approved and controls. So we link out to a school-managed form instead of
- * collecting names, emails, or anything else here.
+ * IMPORTANT — this page embeds Google's form, it does not host one:
+ * the <iframe> below points straight at Google (see CLUB.interestFormEmbedUrl
+ * in src/config/site.ts). Submissions go directly to Google, the same as if
+ * a student had opened the form in its own tab — this static site never
+ * sees, receives, or stores any of it.
  *
- * Set CLUB.interestFormUrl in src/config/site.ts to switch the placeholder
- * below for the real link.
+ * Set CLUB.interestFormUrl / interestFormEmbedUrl in src/config/site.ts to
+ * switch the placeholder below for the real links.
  */
 
 import { Icon } from 'astro-icon/components';
@@ -22,9 +22,10 @@ import Prompt from '../components/Prompt.astro';
 import { CLUB, PERIODS } from '../config/site';
 import { formatPeriod } from '../lib/schedule';
 
-// Until somebody fills in the real form link, show an honest placeholder
-// rather than a button that goes nowhere.
+// Until somebody fills in the real form links, show an honest placeholder
+// rather than an iframe pointed at nothing.
 const hasForm = CLUB.interestFormUrl.length > 0;
+const hasEmbeddedForm = CLUB.interestFormEmbedUrl.length > 0;
 
 /** What a first meeting is actually like. Written to lower the barrier. */
 const EXPECTATIONS = [
@@ -95,19 +96,25 @@ const EXPECTATIONS = [
 
       <div class="mt-8 flex flex-wrap items-center gap-4">
         {
-          hasForm ? (
-            <a
-              href={CLUB.interestFormUrl}
-              class="inline-flex items-center gap-2 rounded border border-gold bg-gold px-5 py-2.5 font-mono text-sm font-medium text-ink transition-colors hover:bg-transparent hover:text-gold"
-            >
-              <Icon name="lucide:clipboard-list" class="h-4 w-4" />
-              Fill out the interest form
-            </a>
-          ) : (
+          !hasForm && (
             <p class="rounded border border-dashed border-edge px-5 py-3 font-mono text-sm text-muted">
               Interest form link coming soon &mdash; for now, just come to a
               meeting or email {CLUB.advisorName}.
             </p>
+          )
+        }
+
+        {
+          hasForm && (
+            <a
+              href={CLUB.interestFormUrl}
+              target="_blank"
+              rel="noopener"
+              class="inline-flex items-center gap-2 font-mono text-sm text-cyan transition-colors hover:text-gold"
+            >
+              <Icon name="lucide:external-link" class="h-4 w-4" />
+              Open the form in a new tab
+            </a>
           )
         }
 
@@ -122,6 +129,21 @@ const EXPECTATIONS = [
           )
         }
       </div>
+
+      {
+        hasEmbeddedForm && (
+          <div class="mt-8 overflow-hidden rounded border border-edge bg-white">
+            <iframe
+              src={CLUB.interestFormEmbedUrl}
+              title="Dev Club interest form"
+              loading="lazy"
+              class="block h-[1086px] w-full max-w-[640px] border-0"
+            >
+              Loading&hellip;
+            </iframe>
+          </div>
+        )
+      }
     </div>
   </section>
 
@@ -156,10 +178,13 @@ const EXPECTATIONS = [
         About your information
       </h2>
       <p class="mt-3 text-sm leading-relaxed text-muted">
-        This website collects nothing. It has no accounts, no tracking, and no
-        forms that send anywhere &mdash; it is a set of plain files served by
-        GitHub. Sign-ups go through the school's own form, and club members are
-        credited on this site by GitHub username only, never by full name.
+        This website collects nothing itself. It has no accounts, no tracking,
+        and no database &mdash; it is a set of plain files served by GitHub.
+        The sign-up form embedded above is Google's: it loads directly from
+        Google's servers, and submitting it sends your answers straight to
+        the school's own Google account, the same as opening the form in its
+        own tab would. Club members are credited on this site by GitHub
+        username only, never by full name.
       </p>
     </div>
   </section>

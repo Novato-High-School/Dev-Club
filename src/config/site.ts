@@ -58,6 +58,64 @@ export const BOOT_MODE: 'skippable' | 'hard' | 'hero' | 'off' = 'hard';
 export const BOOT_STORAGE_KEY = 'devclub.boot.v1';
 
 /**
+ * THE RECRUITING WINDOW
+ * =====================
+ * During recruiting, anyone who WINS the boss fight (not someone who skips
+ * it) sees a one-time offer on the same win screen: a rescue code plus a
+ * "sign up" link, so they can claim a rubber ducky. Outside this date range,
+ * winning just shows the normal "Enter the site" screen — nothing else
+ * changes, and no code is generated anywhere.
+ *
+ * There is no server, so nobody here is really "verifying" a secret — the
+ * code is a scrambled timestamp (see generateRescueCode below), and it is
+ * only as good as the honor system plus a spreadsheet formula that unscrambles
+ * it to see how old it was when someone typed it into the sign-up form. Full
+ * recipe for that formula is in CONTRIBUTING.md under "Recruiting: the
+ * rescue-code offer".
+ */
+export const RECRUITING = {
+  /** Both dates are 'YYYY-MM-DD', inclusive, read in the visitor's local time. */
+  startsOn: '2026-09-15',
+  endsOn: '2026-09-29',
+} as const;
+
+/** Has this browser already seen the rescue-code offer? Bump the version to reset everyone. */
+export const RESCUE_STORAGE_KEY = 'devclub.rescueOffer.v1';
+
+/** True when `now` falls inside the recruiting window above (inclusive, local time). */
+export function isRecruitingActive(now: Date = new Date()): boolean {
+  const start = new Date(`${RECRUITING.startsOn}T00:00:00`);
+  const end = new Date(`${RECRUITING.endsOn}T23:59:59`);
+  return now >= start && now <= end;
+}
+
+/**
+ * THE RESCUE CODE CIPHER
+ * =======================
+ * The code shown on a win is not a fixed word — it is the current minute,
+ * XOR-scrambled with RESCUE_SECRET_KEY and written out in hex. XOR is its own
+ * inverse, so the exact same operation that makes the code also unmakes it:
+ * feed a code back through BITXOR with this same key (that is what the
+ * response-sheet formula in CONTRIBUTING.md does) and you get the minute it
+ * was generated back out, which tells you how old it was at sign-up time.
+ *
+ * RESCUE_EPOCH and RESCUE_SECRET_KEY MUST match the constants used in the
+ * spreadsheet formula, or every code will look "wrong" there. Change either
+ * one to invalidate every code generated so far (handy at the end of a
+ * recruiting push); when you do, update the spreadsheet formula to match.
+ */
+export const RESCUE_EPOCH = new Date('2026-09-01T00:00:00Z').getTime();
+export const RESCUE_SECRET_KEY = 47291;
+export const RESCUE_CODE_PREFIX = 'QUACK-';
+
+/** The rescue code for right now: a scrambled, hex-encoded minute-count since RESCUE_EPOCH. */
+export function generateRescueCode(now: Date = new Date()): string {
+  const minutesSinceEpoch = Math.floor((now.getTime() - RESCUE_EPOCH) / 60_000);
+  const scrambled = minutesSinceEpoch ^ RESCUE_SECRET_KEY;
+  return RESCUE_CODE_PREFIX + scrambled.toString(16).toUpperCase();
+}
+
+/**
  * Text used in the browser tab, search results, and link previews.
  */
 export const SITE_NAME = 'Dev Club';
@@ -88,13 +146,22 @@ export const CLUB = {
   githubOrg: 'https://github.com/Novato-High-School',
 
   /**
-   * Link to the interest form students fill out to join.
+   * Link to the interest form students fill out to join. Used as the
+   * "open in a new tab" fallback next to the embedded form on /join.
    *
-   * TODO: replace this with the real school-managed form link. We deliberately
-   * do NOT collect sign ups on this website: it is a static site, and student
-   * submissions belong in a system the school already approved.
+   * TODO: replace this with the real school-managed form link. This site
+   * still does NOT store sign-ups itself: submissions go straight to
+   * Google, in a form the school already approved.
    */
   interestFormUrl: 'https://forms.gle/nLZ7bLXcHMQm3AT16',
+
+  /**
+   * Google's embeddable version of the same form (Send > Embed <> in
+   * Google Forms gives you this URL; it always ends in ?embedded=true).
+   * Leave empty to fall back to a plain link instead of an iframe.
+   */
+  interestFormEmbedUrl:
+    'https://docs.google.com/forms/d/e/1FAIpQLSe-SojqxoOL2CZAu5Ul21bPxZoPIPk9feFxJTJoBj1aaecNmA/viewform?embedded=true',
 } as const;
 
 /**

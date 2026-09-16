@@ -348,6 +348,82 @@ joke is never at a visitor's expense.
 
 ---
 
+## Recruiting: the rescue-code offer
+
+During a recruiting push, anyone who **wins** the boss fight (not someone who
+just clicks Skip) sees a one-time bonus screen: a rescue code and a "Sign up
+now" link, as a rubber-ducky giveaway. It only appears between the two dates
+in `RECRUITING` in `src/config/site.ts` — change `startsOn` / `endsOn` there
+to move the window.
+
+Each browser only ever sees the offer once, tracked the same way the boot
+intro itself is (a `localStorage` key, `RESCUE_STORAGE_KEY` in
+`src/config/site.ts`). Bump that key's version number if you ever want
+everyone — including past winners — to see a new offer again.
+
+### How the code works, and how to check one
+
+There is no server behind this, so nothing is "verified" in the usual sense.
+`generateRescueCode()` in `src/config/site.ts` takes the current minute,
+scrambles it with `BITXOR` against `RESCUE_SECRET_KEY`, and writes the result
+out in hex as something like `QUACK-1A9F`. XOR undoes itself, so running a
+code back through the same `BITXOR` gives you back the minute it was made —
+which tells you how long ago someone was standing at the win screen when they
+typed it into the sign-up form.
+
+Don't try to make this cryptographically airtight — the "secret" ships in
+this site's public JavaScript, so anyone who opens dev tools can compute a
+valid code without ever playing the fight. That is an accepted trade-off, not
+a bug: the goal is only to catch someone reusing an old screenshot or a code
+a friend told them, not to stop a determined person, and building real
+verification would mean collecting data this site deliberately does not
+collect (see the rule at the top of this file).
+
+To turn a code into a judgment call, add these columns to the interest
+form's response sheet (Google Forms writes each submission's timestamp into
+its own column automatically — call it, say, column A, and the rescue-code
+answer column B):
+
+```
+' 1. Un-hex the code and undo the scramble to recover the original minute count.
+'    47291 below MUST match RESCUE_SECRET_KEY in src/config/site.ts.
+=BITXOR(HEX2DEC(SUBSTITUTE(UPPER(B2), "QUACK-", "")), 47291)
+
+' 2. Turn that minute count back into an actual date/time.
+'    The date below MUST match RESCUE_EPOCH in src/config/site.ts.
+=DATE(2026,9,1) + (<result of step 1> * 60) / 86400
+
+' 3. How many minutes old the code was when this row was submitted.
+=ROUND((A2 - <result of step 2>) * 1440, 1)
+
+' 4. A plain-language read on step 3, instead of a strict pass/fail.
+=IFS(
+  <result of step 3> < 0,  "invalid — code is from the future",
+  <result of step 3> <= 3,  "fresh",
+  <result of step 3> <= 10, "a little old",
+  <result of step 3> <= 30, "old — worth a quick check",
+  TRUE,                     "very old — probably not from this session"
+)
+```
+
+In practice, nest steps 1–3 into one formula per row rather than spreading
+them across columns — they're written separately above only so each step is
+easy to follow.
+
+One gotcha: Google Forms timestamps follow the spreadsheet's own time zone,
+while the code is generated from the visitor's browser clock in UTC. Both
+sides of the comparison need to be in the same time zone or every result will
+be off by a fixed number of hours — check your Sheet's File → Settings time
+zone against UTC and adjust `DATE(2026,9,1)` above (or the formula's result)
+by that offset if they don't match.
+
+If you ever change `RESCUE_EPOCH` or `RESCUE_SECRET_KEY` in `site.ts` —
+which invalidates every code generated so far, handy at the end of a
+recruiting push — update the `47291` and `DATE(2026,9,1)` in the formula
+above to match, or every code will start reading as "invalid."
+
+---
+
 ## Club artwork
 
 **Do not make a new logo in Canva.** Everything is generated from the site's

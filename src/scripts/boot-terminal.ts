@@ -28,6 +28,8 @@ import {
   KNIGHT_ABLAZE,
   type FightState,
 } from './boss-fight';
+import { RESCUE_STORAGE_KEY, isRecruitingActive, generateRescueCode } from '../config/site';
+import { href } from '../lib/href';
 
 /** The settings BootTerminal.astro hands over when it starts this up. */
 export interface BootOptions {
@@ -300,7 +302,7 @@ export function startBootTerminal(options: BootOptions): void {
   //
   // The inline script in the page head makes the same check to decide whether
   // to hide the page behind the overlay, so the two must agree.
-  if (isOverlay && !wantsBoot() && hasSeenBoot(storageKey)) {
+  if (isOverlay && !wantsBoot() && hasSeenKey(storageKey)) {
     revealSite();
     return;
   }
@@ -514,17 +516,58 @@ export function startBootTerminal(options: BootOptions): void {
       reducedMotion ? 0 : 260,
     );
 
-    // Swap the input line for a button that takes them into the site.
+    // During recruiting, a WIN (never a skip) also earns a rubber ducky. Show
+    // this at most once per browser, and only print it — never gate entry to
+    // the site on it — so it stays an offer, not another wall to get past.
+    const offerRescue = isRecruitingActive() && !hasSeenKey(RESCUE_STORAGE_KEY);
+    if (offerRescue) {
+      rememberKey(RESCUE_STORAGE_KEY);
+      await printSequence(
+        [
+          ["  You're in... rescue your rubber ducky!", 'gold'],
+          ['', 'normal'],
+          [`  Your rescue code: ${generateRescueCode()}`, 'success'],
+          ['  Enter it on the form below — the sooner, the better.', 'dim'],
+          ['', 'normal'],
+        ],
+        reducedMotion ? 0 : 260,
+      );
+    }
+
+    // Swap the input line for the way out. During the offer above, a "Sign up
+    // now" link opens /join in a new tab — the terminal, and the code on it,
+    // stay put behind it — next to the usual way in.
     form.hidden = true;
+    const actions = document.createElement('div');
+    actions.className = 'mt-2 flex flex-wrap items-center gap-3';
+
+    let focusTarget: HTMLElement | null = null;
+
+    if (offerRescue) {
+      const signUp = document.createElement('a');
+      signUp.href = href('/join');
+      signUp.target = '_blank';
+      signUp.rel = 'noopener';
+      signUp.className =
+        'rounded border border-gold bg-gold px-5 py-2.5 font-mono text-sm font-medium text-ink ' +
+        'transition-colors hover:bg-transparent hover:text-gold';
+      signUp.textContent = '[ Sign up now ]';
+      actions.appendChild(signUp);
+      focusTarget = signUp;
+    }
+
     const enter = document.createElement('button');
     enter.type = 'button';
-    enter.className =
-      'mt-2 rounded border border-gold px-5 py-2.5 font-mono text-sm text-gold ' +
-      'transition-colors hover:bg-gold hover:text-ink';
-    enter.textContent = '[ Enter the site ]';
+    enter.className = offerRescue
+      ? 'rounded px-5 py-2.5 font-mono text-sm text-muted transition-colors hover:text-gold'
+      : 'rounded border border-gold px-5 py-2.5 font-mono text-sm text-gold ' +
+        'transition-colors hover:bg-gold hover:text-ink';
+    enter.textContent = offerRescue ? 'Maybe later — enter the site' : '[ Enter the site ]';
     enter.addEventListener('click', () => finish());
-    form.parentElement!.appendChild(enter);
-    enter.focus({ preventScroll: true });
+    actions.appendChild(enter);
+
+    form.parentElement!.appendChild(actions);
+    (focusTarget ?? enter).focus({ preventScroll: true });
   }
 
   /** Runs one typed command. */
@@ -701,7 +744,7 @@ export function startBootTerminal(options: BootOptions): void {
 
   /** Closes the terminal for good and shows the site. */
   function finish(): void {
-    rememberBoot(storageKey);
+    rememberKey(storageKey);
 
     if (!isOverlay) return; // The hero version stays where it is.
 
@@ -873,23 +916,23 @@ export function wantsBoot(): boolean {
   }
 }
 
-/** Has this browser been through the intro before? */
-function hasSeenBoot(key: string): boolean {
+/** Has this browser already stored the given key (the boot intro, the rescue offer, ...)? */
+function hasSeenKey(key: string): boolean {
   try {
     return localStorage.getItem(key) !== null;
   } catch {
-    // Private browsing can block storage entirely. Showing the intro again is
+    // Private browsing can block storage entirely. Showing the thing again is
     // a much better failure than showing a blank page.
     return false;
   }
 }
 
-/** Notes that this browser has been through the intro. */
-function rememberBoot(key: string): void {
+/** Notes that this browser has seen the given key, so it is not shown again. */
+function rememberKey(key: string): void {
   try {
     localStorage.setItem(key, new Date().toISOString());
   } catch {
-    // Nothing to do — they will simply see the intro again next time.
+    // Nothing to do — they will simply see it again next time.
   }
 }
 
