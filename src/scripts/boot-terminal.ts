@@ -552,6 +552,13 @@ export function startBootTerminal(options: BootOptions): void {
         'rounded border border-gold bg-gold px-5 py-2.5 font-mono text-sm font-medium text-ink ' +
         'transition-colors hover:bg-transparent hover:text-gold';
       signUp.textContent = '[ Sign up now ]';
+      // The new tab shares this browser's storage, so without this it has no
+      // way to know the fight is already won — it would see a first-time
+      // visitor and, in 'hard' mode with no Skip button, force the whole
+      // fight again just to reach the join page. Remember the win here, but
+      // do not call finish(): this tab should stay open with the code
+      // visible until they are done with it.
+      signUp.addEventListener('click', () => rememberKey(storageKey));
       actions.appendChild(signUp);
       focusTarget = signUp;
     }
