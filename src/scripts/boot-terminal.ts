@@ -28,7 +28,12 @@ import {
   KNIGHT_ABLAZE,
   type FightState,
 } from './boss-fight';
-import { RESCUE_STORAGE_KEY, isRecruitingActive, generateRescueCode } from '../config/site';
+import {
+  RESCUE_STORAGE_KEY,
+  isRecruitingActive,
+  generateRescueCode,
+  buildPrefilledRescueFormUrl,
+} from '../config/site';
 import { href } from '../lib/href';
 
 /** The settings BootTerminal.astro hands over when it starts this up. */
@@ -520,14 +525,23 @@ export function startBootTerminal(options: BootOptions): void {
     // this at most once per browser, and only print it — never gate entry to
     // the site on it — so it stays an offer, not another wall to get past.
     const offerRescue = isRecruitingActive() && !hasSeenKey(RESCUE_STORAGE_KEY);
+    let rescueCode = '';
+    let rescueFormUrl: string | null = null;
     if (offerRescue) {
       rememberKey(RESCUE_STORAGE_KEY);
+      // Generated once and reused below for the "Sign up now" link, so the
+      // code on screen always matches the one the form gets pre-filled with
+      // — calling generateRescueCode() twice could straddle a minute change.
+      rescueCode = generateRescueCode();
+      rescueFormUrl = buildPrefilledRescueFormUrl(rescueCode);
       await printSequence(
         [
           ["  You're in... rescue your rubber ducky!", 'gold'],
           ['', 'normal'],
-          [`  Your rescue code: ${generateRescueCode()}`, 'success'],
-          ['  Enter it on the form below — the sooner, the better.', 'dim'],
+          [`  Your rescue code: ${rescueCode}`, 'success'],
+          rescueFormUrl
+            ? ['  It should be waiting for you on the form — just submit.', 'dim']
+            : ['  Type it into the form when you get there.', 'dim'],
           ['', 'normal'],
         ],
         reducedMotion ? 0 : 260,
@@ -535,8 +549,10 @@ export function startBootTerminal(options: BootOptions): void {
     }
 
     // Swap the input line for the way out. During the offer above, a "Sign up
-    // now" link opens /join in a new tab — the terminal, and the code on it,
-    // stay put behind it — next to the usual way in.
+    // now" link opens the form in a new tab (with the code already filled in,
+    // when RESCUE_CODE_ENTRY_ID is set up — otherwise it falls back to the
+    // plain /join page) — the terminal, and the code on it, stay put behind
+    // it — next to the usual way in.
     form.hidden = true;
     const actions = document.createElement('div');
     actions.className = 'mt-2 flex flex-wrap items-center gap-3';
@@ -545,7 +561,7 @@ export function startBootTerminal(options: BootOptions): void {
 
     if (offerRescue) {
       const signUp = document.createElement('a');
-      signUp.href = href('/join');
+      signUp.href = rescueFormUrl ?? href('/join');
       signUp.target = '_blank';
       signUp.rel = 'noopener';
       signUp.className =

@@ -4,14 +4,19 @@
  * =========
  * Meeting details, what to expect, and how to sign up.
  *
- * IMPORTANT — this page embeds Google's form, it does not host one:
- * the <iframe> below points straight at Google (see CLUB.interestFormEmbedUrl
- * in src/config/site.ts). Submissions go directly to Google, the same as if
- * a student had opened the form in its own tab — this static site never
- * sees, receives, or stores any of it.
+ * IMPORTANT — why there is no sign-up form on this page:
+ * This website is a set of static files. It cannot receive or store anything,
+ * and it should not: student sign-ups belong in a system the school already
+ * approved and controls. So we link out to a school-managed form instead of
+ * collecting names, emails, or anything else here.
  *
- * Set CLUB.interestFormUrl / interestFormEmbedUrl in src/config/site.ts to
- * switch the placeholder below for the real links.
+ * (We tried embedding the form directly in an <iframe> for a while. It broke
+ * for anyone not already signed into a Google account, and fighting that —
+ * sizing, sign-in prompts, empty space on the confirmation screen — kept
+ * causing more problems than the convenience was worth. Link out instead.)
+ *
+ * Set CLUB.interestFormUrl in src/config/site.ts to switch the placeholder
+ * below for the real link.
  */
 
 import { Icon } from 'astro-icon/components';
@@ -22,10 +27,9 @@ import Prompt from '../components/Prompt.astro';
 import { CLUB, PERIODS } from '../config/site';
 import { formatPeriod } from '../lib/schedule';
 
-// Until somebody fills in the real form links, show an honest placeholder
-// rather than an iframe pointed at nothing.
+// Until somebody fills in the real form link, show an honest placeholder
+// rather than a button that goes nowhere.
 const hasForm = CLUB.interestFormUrl.length > 0;
-const hasEmbeddedForm = CLUB.interestFormEmbedUrl.length > 0;
 
 /** What a first meeting is actually like. Written to lower the barrier. */
 const EXPECTATIONS = [
@@ -96,25 +100,19 @@ const EXPECTATIONS = [
 
       <div class="mt-8 flex flex-wrap items-center gap-4">
         {
-          !hasForm && (
+          hasForm ? (
+            <a
+              href={CLUB.interestFormUrl}
+              class="inline-flex items-center gap-2 rounded border border-gold bg-gold px-5 py-2.5 font-mono text-sm font-medium text-ink transition-colors hover:bg-transparent hover:text-gold"
+            >
+              <Icon name="lucide:clipboard-list" class="h-4 w-4" />
+              Fill out the interest form
+            </a>
+          ) : (
             <p class="rounded border border-dashed border-edge px-5 py-3 font-mono text-sm text-muted">
               Interest form link coming soon &mdash; for now, just come to a
               meeting or email {CLUB.advisorName}.
             </p>
-          )
-        }
-
-        {
-          hasForm && (
-            <a
-              href={CLUB.interestFormUrl}
-              target="_blank"
-              rel="noopener"
-              class="inline-flex items-center gap-2 font-mono text-sm text-cyan transition-colors hover:text-gold"
-            >
-              <Icon name="lucide:external-link" class="h-4 w-4" />
-              Open the form in a new tab
-            </a>
           )
         }
 
@@ -129,55 +127,6 @@ const EXPECTATIONS = [
           )
         }
       </div>
-
-      {
-        hasEmbeddedForm && (
-          <div class="mt-8">
-            {/*
-              The form requires signing in (that is what stops duplicate
-              submissions), so a signed-out visitor sees Google's sign-in
-              prompt instead of the questions — much shorter content, same
-              fixed box, hence the empty space below it. That is expected,
-              not broken, so the note below says so instead of implying
-              something is wrong with the embed.
-
-              Google also gives an embedded form no way to tell this page how
-              tall its content is (no resize event, and the iframe is
-              cross-origin, so we cannot read into it either) — the Expand
-              button is a manual stand-in for that. It only changes a CSS
-              class, so refreshing or coming back always starts compact again;
-              nothing about the expanded state is remembered anywhere.
-            */}
-            <p class="mb-2 font-mono text-xs text-muted">
-              Mostly blank below? The form requires signing in to a Google
-              account first, and the sign-in prompt is much shorter than the
-              real form &mdash; that is expected, not broken. Sign in and the
-              questions will take over the space. Still stuck? Use "Open the
-              form in a new tab" above instead.
-            </p>
-            <div class="overflow-hidden rounded border border-edge bg-white">
-              <iframe
-                id="join-form-frame"
-                src={CLUB.interestFormEmbedUrl}
-                title="Dev Club interest form"
-                loading="lazy"
-                class="block h-[620px] w-full max-w-[450px] border-0 transition-[height] duration-200"
-              >
-                Loading&hellip;
-              </iframe>
-            </div>
-            <button
-              type="button"
-              id="join-form-expand"
-              hidden
-              aria-expanded="false"
-              class="mt-2 rounded border border-edge px-3 py-1.5 font-mono text-xs text-muted transition-colors hover:text-gold"
-            >
-              Expand form &#8597;
-            </button>
-          </div>
-        )
-      }
     </div>
   </section>
 
@@ -212,36 +161,11 @@ const EXPECTATIONS = [
         About your information
       </h2>
       <p class="mt-3 text-sm leading-relaxed text-muted">
-        This website collects nothing itself. It has no accounts, no tracking,
-        and no database &mdash; it is a set of plain files served by GitHub.
-        The sign-up form embedded above is Google's: it loads directly from
-        Google's servers, and submitting it sends your answers straight to
-        the school's own Google account, the same as opening the form in its
-        own tab would. Club members are credited on this site by GitHub
-        username only, never by full name.
+        This website collects nothing. It has no accounts, no tracking, and no
+        forms that send anywhere &mdash; it is a set of plain files served by
+        GitHub. Sign-ups go through the school's own form, and club members are
+        credited on this site by GitHub username only, never by full name.
       </p>
     </div>
   </section>
 </BaseLayout>
-
-<script>
-  // Progressive enhancement: the form works fine at its default compact size
-  // without this, so the button only appears once JS proves it can act on a
-  // click. Nothing here is saved anywhere (no localStorage, no cookie) — a
-  // reload or a later visit always starts compact again, on purpose.
-  const frame = document.getElementById('join-form-frame');
-  const toggle = document.getElementById('join-form-expand');
-  const COMPACT = 'h-[620px]';
-  const EXPANDED = 'h-[1250px]';
-
-  if (frame && toggle) {
-    toggle.hidden = false;
-    toggle.addEventListener('click', () => {
-      const expanding = !frame.classList.contains(EXPANDED);
-      frame.classList.toggle(COMPACT, !expanding);
-      frame.classList.toggle(EXPANDED, expanding);
-      toggle.textContent = expanding ? 'Shrink form ↕' : 'Expand form ↕';
-      toggle.setAttribute('aria-expanded', String(expanding));
-    });
-  }
-</script>

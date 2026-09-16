@@ -361,6 +361,22 @@ intro itself is (a `localStorage` key, `RESCUE_STORAGE_KEY` in
 `src/config/site.ts`). Bump that key's version number if you ever want
 everyone — including past winners — to see a new offer again.
 
+### The code shows up already filled in on the form
+
+"Sign up now" does not just link to the form — it links to the form with the
+rescue code pre-filled, using Google's own pre-fill feature (a
+`entry.<fieldId>=<value>` query parameter). `RESCUE_CODE_ENTRY_ID` and
+`RESCUE_CODE_FORM_URL` in `src/config/site.ts` are what make that work; the
+comment above them explains how to find a form field's entry ID if the
+question ever gets rebuilt (rebuilding it, rather than just editing its
+wording, changes the ID).
+
+If `RESCUE_CODE_ENTRY_ID` is ever blank — say, while setting this up for the
+first time — the link quietly falls back to the plain `/join` page instead,
+and the on-screen message changes from "it should be waiting for you" to
+"type it into the form when you get there", so nobody sees a promise the
+link cannot keep.
+
 ### How the code works, and how to check one
 
 There is no server behind this, so nothing is "verified" in the usual sense.
@@ -379,48 +395,81 @@ a friend told them, not to stop a determined person, and building real
 verification would mean collecting data this site deliberately does not
 collect (see the rule at the top of this file).
 
-To turn a code into a judgment call, add these columns to the interest
-form's response sheet (Google Forms writes each submission's timestamp into
-its own column automatically — call it, say, column A, and the rescue-code
-answer column B):
+### Setting up the checker on the response sheet
+
+Google Forms writes each submission's timestamp into its own column
+automatically. These instructions assume that is column **A** and the
+rescue-code answer is column **B** — adjust the letters if your form's
+questions landed in a different order.
+
+**1. Put the tunable knobs in row 1**, columns **C** through **H** (adjust if
+your form has enough questions to reach that far — anywhere free works, this
+just needs to be one row):
+
+| Cell | Value | Meaning |
+| --- | --- | --- |
+| `C1` | `47291` | Must match `RESCUE_SECRET_KEY` in `src/config/site.ts` |
+| `D1` | `=DATE(2026,9,1)` | Must match `RESCUE_EPOCH` in `src/config/site.ts` |
+| `E1` | `-7` | Your timezone's current UTC offset in hours — see the gotcha below |
+| `F1` | `3` | Minutes old before a code stops counting as "fresh" |
+| `G1` | `10` | Minutes old before it stops being "a little old" |
+| `H1` | `30` | Minutes old before it's "very old" instead of just "old" |
+
+Putting these in cells instead of typing them straight into the formula is
+the whole point of "dialing in" — to loosen or tighten how forgiving the
+checker is, or to fix a timezone mistake, you edit one cell, not a formula
+buried in every row.
+
+**2. Paste this into I2** (or wherever's free next to the response data — just
+somewhere that isn't columns C–H, since row 1 there is now the knobs):
 
 ```
-' 1. Un-hex the code and undo the scramble to recover the original minute count.
-'    47291 below MUST match RESCUE_SECRET_KEY in src/config/site.ts.
-=BITXOR(HEX2DEC(SUBSTITUTE(UPPER(B2), "QUACK-", "")), 47291)
-
-' 2. Turn that minute count back into an actual date/time.
-'    The date below MUST match RESCUE_EPOCH in src/config/site.ts.
-=DATE(2026,9,1) + (<result of step 1> * 60) / 86400
-
-' 3. How many minutes old the code was when this row was submitted.
-=ROUND((A2 - <result of step 2>) * 1440, 1)
-
-' 4. A plain-language read on step 3, instead of a strict pass/fail.
-=IFS(
-  <result of step 3> < 0,  "invalid — code is from the future",
-  <result of step 3> <= 3,  "fresh",
-  <result of step 3> <= 10, "a little old",
-  <result of step 3> <= 30, "old — worth a quick check",
-  TRUE,                     "very old — probably not from this session"
+=IF($B2="", "",
+  LET(
+    hex, REGEXEXTRACT(TRIM(UPPER($B2)), "[0-9A-F]+$"),
+    scrambled, HEX2DEC(hex),
+    bucket, BITXOR(scrambled, $C$1),
+    impliedUtc, $D$1 + (bucket * 60) / 86400,
+    implied, impliedUtc + $E$1 / 24,
+    delay, ROUND(($A2 - implied) * 1440, 1),
+    IFS(
+      delay < -1, "invalid — code is from the future (" & delay & "m)",
+      delay <= $F$1, "fresh (" & delay & "m)",
+      delay <= $G$1, "a little old (" & delay & "m)",
+      delay <= $H$1, "old — worth a quick check (" & delay & "m)",
+      TRUE, "very old — probably not from this session (" & delay & "m)"
+    )
+  )
 )
 ```
 
-In practice, nest steps 1–3 into one formula per row rather than spreading
-them across columns — they're written separately above only so each step is
-easy to follow.
+`TRIM`, `UPPER`, and `REGEXEXTRACT("[0-9A-F]+$")` together mean this survives
+the messy answers real students type: extra spaces, lowercase, even someone
+pasting the whole "Your rescue code: QUACK-1A9F" line by accident — it just
+grabs the hex digits off the end and ignores everything before them. The
+`delay < -1` cutoff (instead of `< 0`) gives a one-minute cushion for the
+visitor's clock being a little ahead of the form server's, so an honest,
+fast submission doesn't get flagged as "from the future."
 
-One gotcha: Google Forms timestamps follow the spreadsheet's own time zone,
-while the code is generated from the visitor's browser clock in UTC. Both
-sides of the comparison need to be in the same time zone or every result will
-be off by a fixed number of hours — check your Sheet's File → Settings time
-zone against UTC and adjust `DATE(2026,9,1)` above (or the formula's result)
-by that offset if they don't match.
+**3. Let Sheets auto-fill it for you.** The moment you enter that formula in
+row 2 of a column next to a form's response data, Sheets offers "Autofill
+this formula for all rows in this column?" — take it, and every new
+submission gets checked automatically; you never touch this again except to
+adjust the C1:H1 knobs.
+
+One gotcha worth double-checking: Google Forms timestamps follow the
+spreadsheet's own time zone, while the code is generated from the visitor's
+browser clock in UTC — that is what `E1` corrects for. Check your Sheet's
+File → Settings time zone, work out its current UTC offset (for example
+Pacific is `-7` during Daylight Time, `-8` during Standard Time), and put
+that number in `E1`. **Remember to flip it by one when Daylight Saving
+changes** — an easy thing to forget that will quietly shift every result by
+an hour twice a year.
 
 If you ever change `RESCUE_EPOCH` or `RESCUE_SECRET_KEY` in `site.ts` —
 which invalidates every code generated so far, handy at the end of a
-recruiting push — update the `47291` and `DATE(2026,9,1)` in the formula
-above to match, or every code will start reading as "invalid."
+recruiting push — update `C1` / `D1` to match, or every code will start
+reading as "invalid."
 
 ---
 

@@ -116,6 +116,38 @@ export function generateRescueCode(now: Date = new Date()): string {
 }
 
 /**
+ * PRE-FILLING THE RESCUE CODE ONTO THE FORM
+ * ==========================================
+ * Google Forms will fill in an answer ahead of time if you add
+ * "entry.<fieldId>=<value>" to its URL. RESCUE_CODE_ENTRY_ID is that number
+ * for the question that asks for the rescue code — get it by opening the
+ * form, choosing Send > the <> (embed) icon is NOT it; instead use the ⋮ menu
+ * > "Get pre-filled link", fill in a placeholder answer, click Get link, and
+ * read the entry.NNNNNNNNN number back out of the URL it gives you.
+ *
+ * Leave RESCUE_CODE_ENTRY_ID empty to skip pre-filling — the "Sign up now"
+ * link then just goes to the plain /join page and the visitor types the code
+ * in themselves.
+ */
+export const RESCUE_CODE_ENTRY_ID = '570684888';
+
+/** The form's own URL (not the forms.gle short link — that cannot take pre-fill parameters reliably). */
+export const RESCUE_CODE_FORM_URL =
+  'https://docs.google.com/forms/d/e/1FAIpQLSe-SojqxoOL2CZAu5Ul21bPxZoPIPk9feFxJTJoBj1aaecNmA/viewform';
+
+/**
+ * A link straight to the interest form with the given rescue code already
+ * filled in, or null if RESCUE_CODE_ENTRY_ID has not been set up yet.
+ */
+export function buildPrefilledRescueFormUrl(code: string): string | null {
+  if (!RESCUE_CODE_ENTRY_ID) return null;
+  const url = new URL(RESCUE_CODE_FORM_URL);
+  url.searchParams.set('usp', 'pp_url');
+  url.searchParams.set(`entry.${RESCUE_CODE_ENTRY_ID}`, code);
+  return url.toString();
+}
+
+/**
  * Text used in the browser tab, search results, and link previews.
  */
 export const SITE_NAME = 'Dev Club';
@@ -146,22 +178,13 @@ export const CLUB = {
   githubOrg: 'https://github.com/Novato-High-School',
 
   /**
-   * Link to the interest form students fill out to join. Used as the
-   * "open in a new tab" fallback next to the embedded form on /join.
+   * Link to the interest form students fill out to join.
    *
-   * TODO: replace this with the real school-managed form link. This site
-   * still does NOT store sign-ups itself: submissions go straight to
-   * Google, in a form the school already approved.
+   * TODO: replace this with the real school-managed form link. We deliberately
+   * do NOT collect sign ups on this website: it is a static site, and student
+   * submissions belong in a system the school already approved.
    */
   interestFormUrl: 'https://forms.gle/nLZ7bLXcHMQm3AT16',
-
-  /**
-   * Google's embeddable version of the same form (Send > Embed <> in
-   * Google Forms gives you this URL; it always ends in ?embedded=true).
-   * Leave empty to fall back to a plain link instead of an iframe.
-   */
-  interestFormEmbedUrl:
-    'https://docs.google.com/forms/d/e/1FAIpQLSe-SojqxoOL2CZAu5Ul21bPxZoPIPk9feFxJTJoBj1aaecNmA/viewform?embedded=true',
 } as const;
 
 /**
