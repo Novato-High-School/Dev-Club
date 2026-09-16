@@ -132,15 +132,49 @@ const EXPECTATIONS = [
 
       {
         hasEmbeddedForm && (
-          <div class="mt-8 overflow-hidden rounded border border-edge bg-white">
-            <iframe
-              src={CLUB.interestFormEmbedUrl}
-              title="Dev Club interest form"
-              loading="lazy"
-              class="block h-[1086px] w-full max-w-[640px] border-0"
+          <div class="mt-8">
+            {/*
+              The form requires signing in (that is what stops duplicate
+              submissions), so a signed-out visitor sees Google's sign-in
+              prompt instead of the questions — much shorter content, same
+              fixed box, hence the empty space below it. That is expected,
+              not broken, so the note below says so instead of implying
+              something is wrong with the embed.
+
+              Google also gives an embedded form no way to tell this page how
+              tall its content is (no resize event, and the iframe is
+              cross-origin, so we cannot read into it either) — the Expand
+              button is a manual stand-in for that. It only changes a CSS
+              class, so refreshing or coming back always starts compact again;
+              nothing about the expanded state is remembered anywhere.
+            */}
+            <p class="mb-2 font-mono text-xs text-muted">
+              Mostly blank below? The form requires signing in to a Google
+              account first, and the sign-in prompt is much shorter than the
+              real form &mdash; that is expected, not broken. Sign in and the
+              questions will take over the space. Still stuck? Use "Open the
+              form in a new tab" above instead.
+            </p>
+            <div class="overflow-hidden rounded border border-edge bg-white">
+              <iframe
+                id="join-form-frame"
+                src={CLUB.interestFormEmbedUrl}
+                title="Dev Club interest form"
+                loading="lazy"
+                class="block h-[620px] w-full max-w-[450px] border-0 transition-[height] duration-200"
+              >
+                Loading&hellip;
+              </iframe>
+            </div>
+            <button
+              type="button"
+              id="join-form-expand"
+              hidden
+              aria-expanded="false"
+              class="mt-2 rounded border border-edge px-3 py-1.5 font-mono text-xs text-muted transition-colors hover:text-gold"
             >
-              Loading&hellip;
-            </iframe>
+              Expand form &#8597;
+            </button>
           </div>
         )
       }
@@ -189,3 +223,25 @@ const EXPECTATIONS = [
     </div>
   </section>
 </BaseLayout>
+
+<script>
+  // Progressive enhancement: the form works fine at its default compact size
+  // without this, so the button only appears once JS proves it can act on a
+  // click. Nothing here is saved anywhere (no localStorage, no cookie) — a
+  // reload or a later visit always starts compact again, on purpose.
+  const frame = document.getElementById('join-form-frame');
+  const toggle = document.getElementById('join-form-expand');
+  const COMPACT = 'h-[620px]';
+  const EXPANDED = 'h-[1250px]';
+
+  if (frame && toggle) {
+    toggle.hidden = false;
+    toggle.addEventListener('click', () => {
+      const expanding = !frame.classList.contains(EXPANDED);
+      frame.classList.toggle(COMPACT, !expanding);
+      frame.classList.toggle(EXPANDED, expanding);
+      toggle.textContent = expanding ? 'Shrink form ↕' : 'Expand form ↕';
+      toggle.setAttribute('aria-expanded', String(expanding));
+    });
+  }
+</script>
