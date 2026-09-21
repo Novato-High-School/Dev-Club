@@ -1,0 +1,175 @@
+---
+/**
+ * PULL REQUEST DIAGRAM
+ * ====================
+ * Draws what happens to a change between "I typed something" and "it is on
+ * the website", as a branch leaving the main line and coming back.
+ *
+ * WHY IT IS DRAWN RATHER THAN DESCRIBED
+ * -------------------------------------
+ * "Branch" is the word that loses people. In prose it sounds like jargon; as
+ * a line leaving another line and rejoining it, it is obvious, and the story
+ * a member is writing in src/content/story/ branches in exactly the same
+ * shape. The picture is doing the teaching, so the words around it can stay
+ * short.
+ *
+ * WHY IT IS INLINE SVG
+ * --------------------
+ * Because it is drawn with the site's own colour variables, it follows the
+ * theme automatically, needs no image file, stays sharp at any size, and the
+ * labels are real text - so a screen reader reads them and they can be
+ * selected and searched like any other text on the page.
+ *
+ * To change the wording, edit STAGES below. The drawing positions itself from
+ * those, so nothing in the markup needs touching.
+ */
+
+interface Props {
+  /** Extra classes for the wrapper, e.g. spacing. */
+  class?: string;
+}
+
+const { class: className = '' } = Astro.props;
+
+/**
+ * The four things that happen on the branch, in order, left to right.
+ *
+ * `x` is where the stage sits along the diagram, in the same coordinate space
+ * as the drawing below (0 to 680). Keep the last one well clear of MERGE_X:
+ * the branch turns down towards main there, and the curve will cut straight
+ * through any label that reaches into it.
+ */
+const STAGES = [
+  { x: 160, label: 'commit', caption: 'your scene' },
+  { x: 300, label: 'pull request', caption: 'you ask' },
+  { x: 425, label: 'check', caption: 'it builds' },
+  { x: 510, label: 'review', caption: 'someone reads' },
+];
+
+// The two horizontal lines: `main` along the bottom, your branch above it.
+const MAIN_Y = 142;
+const BRANCH_Y = 64;
+// Where the branch leaves main, and where it rejoins.
+const FORK_X = 90;
+const MERGE_X = 600;
+---
+
+<figure class:list={['not-prose', className]}>
+  <svg
+    viewBox="0 0 680 186"
+    role="img"
+    aria-labelledby="pr-diagram-title pr-diagram-desc"
+    class="h-auto w-full"
+  >
+    <title id="pr-diagram-title">How a change reaches the live site</title>
+    <desc id="pr-diagram-desc">
+      The main branch runs along the bottom. Your branch leaves it, collects
+      your commit, becomes a pull request, passes an automatic check and a
+      review by another person, and then merges back into main, which puts it
+      on the live site.
+    </desc>
+
+    <!-- An arrowhead, reused by both ends of the branch. -->
+    <defs>
+      <marker
+        id="pr-arrow"
+        viewBox="0 0 10 10"
+        refX="8"
+        refY="5"
+        markerWidth="5"
+        markerHeight="5"
+        orient="auto-start-reverse"
+      >
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--color-acid)" />
+      </marker>
+    </defs>
+
+    <!-- ── main, the real website ─────────────────────────────────────── -->
+    <line
+      x1="10"
+      y1={MAIN_Y}
+      x2="670"
+      y2={MAIN_Y}
+      stroke="var(--color-edge)"
+      stroke-width="3"
+    />
+    <text x="10" y={MAIN_Y + 26} fill="var(--color-muted)" font-size="13" font-family="ui-monospace, monospace">
+      main &mdash; the live website
+    </text>
+
+    <!-- ── your branch: out of main, along the top, and back in ───────── -->
+    <path
+      d={`M ${FORK_X} ${MAIN_Y} C ${FORK_X + 40} ${MAIN_Y}, ${FORK_X + 10} ${BRANCH_Y}, ${FORK_X + 50} ${BRANCH_Y} L ${MERGE_X - 25} ${BRANCH_Y} C ${MERGE_X - 5} ${BRANCH_Y}, ${MERGE_X - 20} ${MAIN_Y}, ${MERGE_X} ${MAIN_Y}`}
+      fill="none"
+      stroke="var(--color-gold)"
+      stroke-width="3"
+      marker-end="url(#pr-arrow)"
+    />
+    <text
+      x={FORK_X + 52}
+      y={BRANCH_Y - 22}
+      fill="var(--color-gold)"
+      font-size="13"
+      font-family="ui-monospace, monospace"
+    >
+      your branch
+    </text>
+
+    <!-- Where the branch leaves main. -->
+    <circle cx={FORK_X} cy={MAIN_Y} r="5" fill="var(--color-edge)" />
+
+    <!-- ── the stages along the branch ────────────────────────────────── -->
+    {
+      STAGES.map((stage) => (
+        <>
+          <circle
+            cx={stage.x}
+            cy={BRANCH_Y}
+            r="7"
+            fill="var(--color-ink)"
+            stroke="var(--color-gold)"
+            stroke-width="3"
+          />
+          <text
+            x={stage.x}
+            y={BRANCH_Y + 26}
+            text-anchor="middle"
+            fill="var(--color-bone)"
+            font-size="12"
+            font-family="ui-monospace, monospace"
+          >
+            {stage.label}
+          </text>
+          <text
+            x={stage.x}
+            y={BRANCH_Y + 42}
+            text-anchor="middle"
+            fill="var(--color-muted)"
+            font-size="11"
+            font-family="ui-monospace, monospace"
+          >
+            {stage.caption}
+          </text>
+        </>
+      ))
+    }
+
+    <!-- Where it lands. The arrowhead above is the mark; a dot here as well
+         just stacked two shapes on the same point. -->
+    <text
+      x={MERGE_X + 12}
+      y={MAIN_Y + 5}
+      fill="var(--color-acid)"
+      font-size="13"
+      font-family="ui-monospace, monospace"
+    >
+      live
+    </text>
+  </svg>
+
+  <figcaption class="mt-3 text-xs leading-relaxed text-muted">
+    <span class="font-mono text-gold">//</span> Nothing you do on your own branch
+    can break the live site. If the check fails, the change simply does not go in
+    &mdash; the website keeps serving the last working version while you fix it.
+  </figcaption>
+</figure>

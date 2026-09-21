@@ -12,6 +12,29 @@
  * engines and for anyone whose JavaScript never arrives.
  */
 
+import { loadStory } from '../lib/story';
+
+/**
+ * Load the branching storyline hidden in the terminal.
+ *
+ * `loadStory` also CHECKS that the story holds together, so a scene with a
+ * mistake in it stops the build — which means it stops a pull request, on the
+ * contributor's own branch, before it can reach the live site.
+ *
+ * The scenes travel to the browser as JSON in the page rather than as part of
+ * the script bundle, because the script is shared by every page and the story
+ * is only ever needed by this one.
+ */
+const story = await loadStory();
+
+/**
+ * JSON is safe inside a <script> tag except for one thing: the literal text
+ * "</script>" anywhere in it ends the tag early, and the rest of the story
+ * would be dumped onto the page as visible text. Escaping every '<' as a
+ * unicode escape avoids it — JSON.parse turns it straight back into '<'.
+ */
+const storyJson = JSON.stringify(story).replace(/</g, '\\u003c');
+
 interface Props {
   /**
    * 'overlay' covers the screen (used in skippable and hard modes).
@@ -26,6 +49,13 @@ const { variant = 'overlay' } = Astro.props;
 // to be a dialog box or claim to cover anything.
 const isOverlay = variant === 'overlay';
 ---
+
+<!--
+  The story, handed to the terminal script. `type="application/json"` means
+  the browser does not try to run it; it is just data sitting in the page for
+  the script to read.
+-->
+<script id="boot-story" type="application/json" is:inline set:html={storyJson}></script>
 
 <template id="boot-template">
   <div

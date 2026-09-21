@@ -15,6 +15,7 @@ import { Icon } from 'astro-icon/components';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import HexGrid from '../components/HexGrid.astro';
 import Prompt from '../components/Prompt.astro';
+import PullRequestDiagram from '../components/PullRequestDiagram.astro';
 import { href } from '../lib/href';
 import { CLUB } from '../config/site';
 
@@ -22,8 +23,9 @@ import { CLUB } from '../config/site';
  * The onboarding steps, in order.
  *
  * `where` is a promise to the reader about what they need to get it done:
- *   'school' - works fine on a school Chromebook during a meeting
+ *   'school' - works fine on a school computer during a meeting
  *   'home'   - needs a document or an adult, so do it outside the meeting
+ *   'either' - works anywhere you have a browser
  */
 const STEPS = [
   {
@@ -67,20 +69,47 @@ const STEPS = [
   },
   {
     n: 4,
-    title: 'Make your first change',
-    where: 'school',
-    time: '15 minutes',
+    title: 'Find the story',
+    where: 'either',
+    time: '5 minutes',
+    action: 'play',
     body: [
-      'The fastest real contribution is adding yourself to a project on this site, or fixing a typo you spotted. It is one Markdown file and you can do it entirely in the browser.',
-      'Open the repository, press the full stop key ( . ) and GitHub turns into a code editor in your browser. No installing anything.',
+      'There is a text adventure hidden in the terminal on the front page of this site. It is an alternative to fighting the firewall knight, and it is the thing you are about to add to — so play it first. You cannot write a room for a game you have not been inside.',
+      'Nobody is going to tell you the way in. Open the terminal and type cat .secrets; whoever was here before you left notes, and the notes are the trail.',
     ],
-    isFirstTask: true,
   },
   {
     n: 5,
-    title: 'Get a real workspace',
+    title: 'Write a scene',
     where: 'school',
+    time: '15 minutes',
+    action: 'write-scene',
+    body: [
+      'Every room in that story is one Markdown file in src/content/story/, and adding a room means adding one file. You write where it hangs off, what the reader types to get there, and what they find.',
+      'You do not touch anybody else’s file, which is deliberate: ten people can each add a scene in the same meeting and none of you will collide.',
+    ],
+    warning:
+      'Your scene must either lead somewhere or end the story. If it does nothing, the automatic check will say so in plain English and tell you which of the two to add — that is the check doing its job, not you failing.',
+  },
+  {
+    n: 6,
+    title: 'Turn it into a pull request',
+    where: 'school',
+    time: '5 minutes, then wait for a review',
+    action: 'pull-request',
+    body: [
+      'Your scene branches the story. Saving it branches the code — same word, very nearly the same idea. A branch is your own copy of the project where your change lives until somebody has looked at it.',
+      'A pull request is you saying: here is my branch, please put it in the real one. A check builds the whole site to make sure nothing broke, somebody reads it, and then it is live.',
+    ],
+    warning:
+      'When GitHub asks how to save, choose "Create a new branch and start a pull request". It may offer to commit straight to main instead — that option will be refused, because nobody pushes to main here, including the advisor.',
+  },
+  {
+    n: 7,
+    title: 'Get a real workspace',
+    where: 'either',
     time: '5 minutes to start it up',
+    action: 'codespace',
     body: [
       'When you want to change how the site looks or works — not just its words — you need to actually run it. A Codespace is a full computer in the cloud, opened from a browser tab, with the site running live next to your code.',
       'We have already written the setup, so it builds itself. Your GitHub account includes a monthly allowance of free Codespace time; stop it when you are done and it costs you nothing.',
@@ -88,8 +117,50 @@ const STEPS = [
   },
 ];
 
-// Where the "press ." trick and the Codespace button should point.
+/**
+ * The template a new scene file starts with.
+ *
+ * GitHub lets us pre-fill a new file through the URL, so the first thing a
+ * contributor sees is a working example with their cursor in it rather than
+ * an empty box and a guess about the format. Every field is explained in
+ * src/content.config.ts, and the automatic check quotes that file by name if
+ * anything is missing.
+ */
+const SCENE_TEMPLATE = `---
+# The scene your new one hangs off. This has to match another file's name
+# in src/content/story/, without the .md on the end.
+from: sub-level
+
+# What the reader types to get here. One or two words.
+choice: knock
+
+# true if your scene ENDS the story and lets the reader into the site.
+# If you set this to false, something else has to follow your scene.
+ending: true
+
+# Your GitHub username, so you get the credit. Username only, never a name.
+author: your-github-username
+---
+
+Write what the reader finds here. Keep the lines short - about 68
+characters - because this gets printed into a terminal.
+`;
+
+// The repository everything on this page points at.
 const REPO_URL = `${CLUB.githubOrg}/Dev-Club`;
+
+/**
+ * Links straight into GitHub's new-file editor, with the filename box and the
+ * file itself already filled in.
+ *
+ * This is the plain GitHub website rather than one of the browser editors,
+ * because it is the lightest thing that works and because its save dialog is
+ * the whole branch-and-pull-request flow as a form — which is exactly what
+ * step 6 is trying to teach.
+ */
+const NEW_SCENE_URL =
+  `${REPO_URL}/new/main/src/content/story` +
+  `?filename=my-scene.md&value=${encodeURIComponent(SCENE_TEMPLATE)}`;
 ---
 
 <BaseLayout
@@ -104,9 +175,10 @@ const REPO_URL = `${CLUB.githubOrg}/Dev-Club`;
         Start here
       </h1>
       <p class="mt-5 max-w-2xl leading-relaxed text-muted">
-        Five steps from never having touched GitHub to having your name &mdash;
-        well, your username &mdash; on something real. Most people get through
-        the first four in a single meeting.
+        Seven steps from never having touched GitHub to having your name &mdash;
+        well, your username &mdash; on something real: a room in the text
+        adventure hidden on this site, written by you. Most people get through
+        steps 4 to 6 in a single meeting.
       </p>
     </div>
   </section>
@@ -127,12 +199,14 @@ const REPO_URL = `${CLUB.githubOrg}/Dev-Club`;
                 <span
                   class:list={[
                     'rounded-full border px-2 py-0.5',
-                    step.where === 'school'
-                      ? 'border-acid/40 text-acid'
-                      : 'border-cyan/40 text-cyan',
+                    step.where === 'school' && 'border-acid/40 text-acid',
+                    step.where === 'home' && 'border-cyan/40 text-cyan',
+                    step.where === 'either' && 'border-edge text-muted',
                   ]}
                 >
-                  {step.where === 'school' ? 'do it at a meeting' : 'do it at home'}
+                  {step.where === 'school' && 'do it at a meeting'}
+                  {step.where === 'home' && 'do it at home'}
+                  {step.where === 'either' && 'do it anywhere'}
                 </span>
                 <span class="text-muted">{step.time}</span>
               </span>
@@ -155,15 +229,66 @@ const REPO_URL = `${CLUB.githubOrg}/Dev-Club`;
               </p>
             )}
 
-            {/* Step 4 gets the actual buttons, since it is the doing step. */}
-            {step.isFirstTask && (
+            {/* ----------------------------------------------------------
+                The buttons for the steps that have something to press.
+
+                Anything that leaves this site opens in a NEW TAB, so the
+                instructions are still here when the reader comes back. Every
+                such link is marked with the same small arrow icon, which is
+                what that icon means everywhere else on this page.
+            ---------------------------------------------------------- */}
+            {step.action === 'play' && (
               <div class="mt-5 flex flex-wrap gap-3">
                 <a
-                  href={`https://github.dev/Novato-High-School/Dev-Club`}
+                  href={`${href('/')}?boot`}
+                  class="inline-flex items-center gap-2 rounded border border-gold bg-gold px-4 py-2 font-mono text-xs font-medium text-ink transition-colors hover:bg-transparent hover:text-gold"
+                >
+                  <Icon name="lucide:terminal" class="h-3.5 w-3.5" />
+                  Open the terminal
+                </a>
+              </div>
+            )}
+
+            {step.action === 'write-scene' && (
+              <div class="mt-5 flex flex-wrap gap-3">
+                <a
+                  href={NEW_SCENE_URL}
+                  target="_blank"
+                  rel="noopener"
                   class="inline-flex items-center gap-2 rounded border border-gold bg-gold px-4 py-2 font-mono text-xs font-medium text-ink transition-colors hover:bg-transparent hover:text-gold"
                 >
                   <Icon name="lucide:pencil" class="h-3.5 w-3.5" />
-                  Edit in the browser
+                  Write a scene on GitHub
+                  <Icon name="lucide:external-link" class="h-3 w-3 opacity-70" />
+                </a>
+                <a
+                  href={`${REPO_URL}/tree/main/src/content/story`}
+                  target="_blank"
+                  rel="noopener"
+                  class="inline-flex items-center gap-2 rounded border border-edge px-4 py-2 font-mono text-xs text-bone transition-colors hover:border-gold hover:text-gold"
+                >
+                  Read the existing scenes
+                  <Icon name="lucide:external-link" class="h-3 w-3 opacity-70" />
+                </a>
+              </div>
+            )}
+
+            {/* Step 6 is the one about branches, so it gets the picture. */}
+            {step.action === 'pull-request' && (
+              <PullRequestDiagram class="mt-6" />
+            )}
+
+            {step.action === 'codespace' && (
+              <div class="mt-5 flex flex-wrap gap-3">
+                <a
+                  href={`https://codespaces.new/Novato-High-School/Dev-Club?quickstart=1`}
+                  target="_blank"
+                  rel="noopener"
+                  class="inline-flex items-center gap-2 rounded border border-gold bg-gold px-4 py-2 font-mono text-xs font-medium text-ink transition-colors hover:bg-transparent hover:text-gold"
+                >
+                  <Icon name="lucide:cloud" class="h-3.5 w-3.5" />
+                  Open a Codespace
+                  <Icon name="lucide:external-link" class="h-3 w-3 opacity-70" />
                 </a>
                 <a
                   href={href('/build')}
@@ -174,22 +299,11 @@ const REPO_URL = `${CLUB.githubOrg}/Dev-Club`;
               </div>
             )}
 
-            {/* Step 5 gets the Codespace launcher. */}
-            {step.n === 5 && (
-              <div class="mt-5 flex flex-wrap gap-3">
-                <a
-                  href={`https://codespaces.new/Novato-High-School/Dev-Club?quickstart=1`}
-                  class="inline-flex items-center gap-2 rounded border border-gold bg-gold px-4 py-2 font-mono text-xs font-medium text-ink transition-colors hover:bg-transparent hover:text-gold"
-                >
-                  <Icon name="lucide:cloud" class="h-3.5 w-3.5" />
-                  Open a Codespace
-                </a>
-              </div>
-            )}
-
             {step.link && (
               <a
                 href={step.link.url}
+                target="_blank"
+                rel="noopener"
                 class="mt-4 inline-flex items-center gap-1.5 font-mono text-xs text-cyan transition-colors hover:text-gold"
               >
                 <Icon name="lucide:external-link" class="h-3.5 w-3.5" />
@@ -202,32 +316,41 @@ const REPO_URL = `${CLUB.githubOrg}/Dev-Club`;
     </ol>
 
     {/* ------------------------------------------------------------------
-        THE TWO BROWSER WORKSPACES, compared side by side.
+        THE TWO WAYS TO WORK, compared side by side.
+
+        Deliberately says nothing about whether either of these is reachable
+        from the school network. Some schools filter developer sites and some
+        do not, we cannot test every network a member will sit on, and a
+        confident claim that turns out to be wrong is worse than no claim -
+        a student who was promised it works concludes THEY broke it. So the
+        page describes what each tool is for and says what to do when a page
+        does not load, which is true everywhere.
     ------------------------------------------------------------------ */}
     <div class="mt-14">
       <Prompt command="which editor" />
       <h2 class="mt-3 font-mono text-2xl font-semibold">
-        Two ways to work in a browser
+        Two ways to work
       </h2>
       <p class="mt-4 text-sm leading-relaxed text-muted">
-        Both run on a school Chromebook. Pick by what you are doing, not by
-        which sounds more impressive.
+        Pick by what you are doing, not by which sounds more impressive. Almost
+        everything a new member does is the one on the left.
       </p>
 
       <div class="mt-7 grid gap-5 sm:grid-cols-2">
         <div class="rounded-lg border border-edge bg-surface p-6">
           <div class="flex items-center gap-3">
             <Icon name="lucide:pencil" class="h-5 w-5 text-gold" />
-            <h3 class="font-mono text-base font-semibold">github.dev</h3>
+            <h3 class="font-mono text-base font-semibold">The GitHub website</h3>
           </div>
           <p class="mt-3 text-sm leading-relaxed text-muted">
-            Press <code class="rounded bg-ink px-1.5 py-0.5 font-mono text-gold"
-              >.</code
-            > on any repository page. Opens instantly, free forever, no setup.
+            Editing a file straight on github.com. No setup, nothing to install,
+            and the save dialog walks you through making a branch and opening a
+            pull request.
           </p>
           <ul class="mt-4 space-y-1.5 font-mono text-xs text-muted">
-            <li><span class="text-acid">+</span> instant, no waiting</li>
+            <li><span class="text-acid">+</span> opens instantly</li>
             <li><span class="text-acid">+</span> perfect for Markdown and text</li>
+            <li><span class="text-acid">+</span> teaches the branch and review flow</li>
             <li>
               <span class="text-gold">&minus;</span> cannot run the site or use a
               terminal
@@ -242,7 +365,7 @@ const REPO_URL = `${CLUB.githubOrg}/Dev-Club`;
           </div>
           <p class="mt-3 text-sm leading-relaxed text-muted">
             A whole computer in a browser tab, with the site running live beside
-            your code. Uses part of your monthly free allowance.
+            your code. For changing how the site works, not just what it says.
           </p>
           <ul class="mt-4 space-y-1.5 font-mono text-xs text-muted">
             <li><span class="text-acid">+</span> real terminal, runs the site</li>
@@ -251,9 +374,25 @@ const REPO_URL = `${CLUB.githubOrg}/Dev-Club`;
               <span class="text-gold">&minus;</span> a few minutes to start; stop
               it when done
             </li>
+            <li>
+              <span class="text-gold">&minus;</span> uses part of your monthly
+              free allowance
+            </li>
           </ul>
         </div>
       </div>
+
+      {/* The honest note about networks, in place of a promise we cannot keep. */}
+      <p class="mt-6 flex gap-2.5 rounded border border-edge p-4 text-sm leading-relaxed text-muted">
+        <Icon name="lucide:wifi-off" class="mt-0.5 h-4 w-4 shrink-0 text-muted" />
+        <span>
+          If one of these opens to a blank or half-loaded page, that is almost
+          always the network blocking it rather than anything you did. School
+          and workplace networks filter sites they do not recognise. Try it on a
+          different network before you spend any time debugging it, and tell us
+          which one failed &mdash; that is useful to know.
+        </span>
+      </p>
     </div>
 
     {/* ------------------------------------------------------------------

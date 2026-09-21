@@ -36,6 +36,58 @@ import {
 } from '../config/site';
 import { href } from '../lib/href';
 
+/**
+ * ONE SCENE of the hidden storylines.
+ *
+ * These are written by club members as Markdown files in src/content/story/,
+ * checked at build time by src/lib/story.ts, and handed to this script as
+ * JSON sitting in the page. Nothing here is hard-coded, which is the point:
+ * adding to the story is a Markdown file, not a change to this file.
+ */
+interface StoryScene {
+  id: string;
+  /** What the reader types to get here from the scene before. */
+  choice: string | null;
+  /** The secret word that starts this storyline. Entrances only. */
+  command: string | null;
+  /** Reaching this scene opens the way into the site. */
+  ending: boolean;
+  /** Cryptic clue for `.secrets`, on the entrances an advisor has promoted. */
+  hint: string | null;
+  /** The scene text. */
+  body: string;
+  /** The scenes that lead on from this one. */
+  choices: StoryScene[];
+}
+
+/**
+ * Reads the scenes out of the page.
+ *
+ * Returns an empty list if anything at all is wrong. A missing or malformed
+ * story must not stop the terminal working — the fight is still there, and a
+ * visitor who cannot get in because of a content error would be the worst
+ * possible outcome of a feature meant to let students contribute.
+ */
+function loadScenes(): StoryScene[] {
+  try {
+    const source = document.getElementById('boot-story')?.textContent;
+    return source ? (JSON.parse(source) as StoryScene[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Words the terminal keeps for itself while a storyline is being played.
+ *
+ * These are checked BEFORE any scene's own choices, so that whatever anybody
+ * writes in a scene file, a reader can always get out. src/content.config.ts
+ * refuses to build a scene that tries to use one of them, so a contributor
+ * hears about the clash rather than quietly having their choice ignored.
+ */
+const STORY_EXITS = /^(exit|quit|run|flee)$/i;
+const STORY_BACK = /^back$/i;
+
 /** The settings BootTerminal.astro hands over when it starts this up. */
 export interface BootOptions {
   mode: 'skippable' | 'hard' | 'hero';
@@ -349,6 +401,18 @@ export function startBootTerminal(options: BootOptions): void {
 
   /** Null when at the prompt; a fight in progress otherwise. */
   let fight: FightState | null = null;
+  /** Null when at the prompt; the scene being played otherwise. */
+  let scene: StoryScene | null = null;
+  /**
+   * The scenes walked through to get to the current one, most recent last.
+   *
+   * `back` pops this. It is a stack rather than a lookup of each scene's
+   * parent so that it stays correct however the story files are written, and
+   * so that it keeps working even if a scene's `from` is wrong.
+   */
+  const sceneTrail: StoryScene[] = [];
+  /** The storylines, loaded once when the terminal opens. */
+  const scenes = loadScenes();
   /** Once someone is through, typing is finished. */
   let granted = false;
 
@@ -506,24 +570,174 @@ export function startBootTerminal(options: BootOptions): void {
     }
 
     fight = null;
-    granted = true;
-    input.disabled = true;
+    await grantAccess([
+      ['', 'normal'],
+      ['  ✓ FIREWALL DOWN', 'success'],
+      ['  ✓ ACCESS GRANTED', 'success'],
+      ['', 'normal'],
+      ['  Welcome to Dev Club.', 'normal'],
+      ['', 'normal'],
+    ]);
+  }
 
+  // ---------------------------------------------------------------------
+  // The hidden storylines
+  // ---------------------------------------------------------------------
+
+  /**
+   * Prints a scene: its text, then what can be done about it.
+   *
+   * Scene text arrives as a paragraph of Markdown, and the terminal prints
+   * one line at a time, so it is split on newlines and sent through the same
+   * typing effect as everything else.
+   */
+  async function showScene(next: StoryScene): Promise<void> {
+    scene = next;
+
+    print('');
     await printSequence(
-      [
+      next.body.trimEnd().split('\n').map((line) => [line, 'normal'] as [string, LineStyle]),
+      reducedMotion ? 0 : 45,
+    );
+    print('');
+
+    // An ending is the way into the site, and behaves exactly like winning
+    // the fight — same offer, same buttons, same everything.
+    if (next.ending) {
+      scene = null;
+      sceneTrail.length = 0;
+      await grantAccess([
         ['', 'normal'],
-        ['  ✓ FIREWALL DOWN', 'success'],
-        ['  ✓ ACCESS GRANTED', 'success'],
+        ['  \u2713 ACCESS GRANTED', 'success'],
         ['', 'normal'],
         ['  Welcome to Dev Club.', 'normal'],
         ['', 'normal'],
-      ],
-      reducedMotion ? 0 : 260,
+      ]);
+      return;
+    }
+
+    printSceneChoices();
+  }
+
+  /**
+   * The list of what can be typed here.
+   *
+   * The way out is always printed, so nobody has to guess that it exists. A
+   * visitor deep in a storyline they have lost interest in should be able to
+   * see how to leave without reading anybody's mind.
+   */
+  function printSceneChoices(): void {
+    for (const option of scene?.choices ?? []) {
+      print(`  > ${option.choice}`, 'gold');
+    }
+    print('');
+    print(
+      sceneTrail.length ? '  (back, or exit to leave)' : '  (exit to leave)',
+      'dim',
+    );
+    print('');
+  }
+
+  /** Leaves the story and returns to the prompt. */
+  function leaveStory(message: string): void {
+    scene = null;
+    sceneTrail.length = 0;
+    input.placeholder = 'type help';
+    print('');
+    print(message, 'dim');
+    print('');
+  }
+
+  /**
+   * One move inside a storyline.
+   *
+   * The order here is the whole safety guarantee. The words that get somebody
+   * out are matched FIRST, before the scene's own choices are even looked at,
+   * so no scene can take them over however it is written.
+   */
+  async function sceneTurn(raw: string): Promise<void> {
+    const text = raw.trim();
+
+    if (STORY_EXITS.test(text)) {
+      leaveStory('You step back out into the dark, and the prompt is waiting.');
+      return;
+    }
+
+    if (STORY_BACK.test(text)) {
+      const previous = sceneTrail.pop();
+      if (!previous) {
+        leaveStory('You climb back up. The hatch closes behind you.');
+        return;
+      }
+      await showScene(previous);
+      return;
+    }
+
+    // Reading the notes is allowed mid-story, exactly as it is mid-fight.
+    if (/^(cat +)?\.?secrets$/i.test(text)) {
+      await printSecrets();
+      return;
+    }
+
+    // `help` here means "what can I do in this room", not the server's menu.
+    if (/^help$/i.test(text)) {
+      print('');
+      print('You can type:', 'dim');
+      printSceneChoices();
+      return;
+    }
+
+    const wanted = text.toLowerCase();
+    const chosen = scene?.choices.find(
+      (option) => option.choice?.trim().toLowerCase() === wanted,
     );
 
-    // During recruiting, a WIN (never a skip) also earns a rubber ducky. Show
-    // this at most once per browser, and only print it — never gate entry to
-    // the site on it — so it stays an offer, not another wall to get past.
+    if (!chosen) {
+      print('');
+      print('Nothing happens.', 'normal');
+      printSceneChoices();
+      return;
+    }
+
+    // Remember where we were, so `back` can undo this move.
+    if (scene) sceneTrail.push(scene);
+
+    // The scene handed over in `choices` is a summary without its own
+    // children, so the full one is looked up before it is shown.
+    await showScene(scenes.find((candidate) => candidate.id === chosen.id) ?? chosen);
+  }
+
+  /** Opens a storyline at its entrance. */
+  async function startStory(entrance: StoryScene): Promise<void> {
+    sceneTrail.length = 0;
+    input.placeholder = 'what do you do?';
+    await showScene(entrance);
+  }
+
+  /**
+   * THE WAY OUT
+   * ===========
+   * Everything that happens once somebody is through: the closing lines, the
+   * rubber ducky offer during recruiting, and the buttons that take them into
+   * the site.
+   *
+   * There are two ways to get here — beat the knight, or finish one of the
+   * storylines hidden in the terminal — and they have to behave identically,
+   * because anything the fight gives you that a storyline does not turns the
+   * story into a consolation prize. `headline` is the only thing that differs:
+   * the few lines that say what you just did.
+   */
+  async function grantAccess(headline: [string, LineStyle][]): Promise<void> {
+    granted = true;
+    input.disabled = true;
+
+    await printSequence(headline, reducedMotion ? 0 : 260);
+
+    // During recruiting, getting through under your own steam (never a skip)
+    // also earns a rubber ducky — beating the knight and finishing a storyline
+    // count the same. Show it at most once per browser, and only print it —
+    // never gate entry to the site on it — so it stays an offer, not another
+    // wall to get past.
     const offerRescue = isRecruitingActive() && !hasSeenKey(RESCUE_STORAGE_KEY);
     let rescueCode = '';
     let rescueFormUrl: string | null = null;
@@ -606,6 +820,12 @@ export function startBootTerminal(options: BootOptions): void {
       return;
     }
 
+    // Mid-story, anything typed is a move rather than a command.
+    if (scene) {
+      await sceneTurn(text);
+      return;
+    }
+
     // Lower-case it and squeeze runs of spaces, so "ls   -A" still matches
     // "ls -a". Small thing; saves a lot of "why didn't that work".
     const name = text.toLowerCase().replace(/\s+/g, ' ');
@@ -647,6 +867,17 @@ export function startBootTerminal(options: BootOptions): void {
     // works the way somebody used to a terminal would expect.
     const catTarget = name.startsWith('cat ') ? name.slice(4).trim() : null;
     const eggName = catTarget && EASTER_EGGS[catTarget] ? catTarget : name;
+
+    // A storyline entrance: an unlisted word somebody has found. Checked
+    // after the commands and the eggs above, so that a scene file can never
+    // take over a word the terminal already answers to, whatever it is named.
+    const entrance = scenes.find(
+      (candidate) => candidate.command?.trim().toLowerCase() === name,
+    );
+    if (entrance) {
+      await startStory(entrance);
+      return;
+    }
 
     if (EASTER_EGGS[eggName]) {
       print('');
@@ -724,6 +955,27 @@ export function startBootTerminal(options: BootOptions): void {
         ['Keep it talking. It cannot help itself.', 'cyan'],
         ['', 'normal'],
         ['I ran out of lunch break. You might not.', 'dim'],
+        ['', 'normal'],
+      ],
+      reducedMotion ? 0 : 60,
+    );
+
+    /**
+     * Clues for the storylines, but only the ones an advisor has given a
+     * `hint` to. Most entrances have none, so they stay genuinely hidden and
+     * this stays a trail rather than turning back into the index it used to
+     * be.
+     */
+    const clues = scenes.filter((candidate) => candidate.command && candidate.hint);
+    if (!clues.length) return;
+
+    await printSequence(
+      [
+        ['# and one more thing', 'dim'],
+        ['', 'normal'],
+        ...clues.map((clue) => [clue.hint!, 'normal'] as [string, LineStyle]),
+        ['', 'normal'],
+        ['There is more than one way out of this room.', 'cyan'],
         ['', 'normal'],
       ],
       reducedMotion ? 0 : 60,
