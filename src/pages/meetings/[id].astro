@@ -51,16 +51,100 @@ const editUrl = meeting.entry
   : `${CLUB.githubOrg}/Dev-Club/new/main/src/content/meetings?filename=${meeting.id}.md`;
 
 /**
+ * The hard ceiling for the announcement, in characters.
+ *
+ * Remind caps an announcement at 140, and anything longer is cut off at the
+ * far end — which is exactly where the link sits. A truncated link is a dead
+ * link, so we enforce the limit ourselves rather than letting Remind do it.
+ */
+const ANNOUNCEMENT_LIMIT = 140;
+
+/**
+ * The date as 'Monday 9/21/26'. The weekday is spelled out because that is
+ * the part a family actually acts on; the rest is numeric to save room.
+ */
+const announcementDate = new Intl.DateTimeFormat('en-US', {
+  weekday: 'long',
+  month: 'numeric',
+  day: 'numeric',
+  year: '2-digit',
+  timeZone: 'UTC',
+}).format(meeting.date).replace(',', '');
+
+/**
+ * Turns a 24-hour 'HH:MM' into a 12-hour 'h:mm', with no am/pm.
+ *
+ * Dropping am/pm is safe here only because school meetings happen during the
+ * school day — nobody reads '12:25' for a club and thinks midnight. If the
+ * club ever meets in the evening, put the suffix back.
+ */
+function shortTime(hhmm: string): string {
+  const [hours, minutes] = hhmm.split(':').map(Number);
+  return `${hours % 12 || 12}:${String(minutes).padStart(2, '0')}`;
+}
+
+/**
+ * How to say where it is.
+ *
+ * `where` is usually a bare room number from the config ('3202'), which reads
+ * as nothing on its own in a text message, so it gets 'rm ' in front of it.
+ * But a meeting can override it with real words — 'the library', 'the gym' —
+ * and 'in rm the library' is nonsense, so the prefix is only added when the
+ * value actually looks like a room number.
+ */
+const looksLikeRoomNumber = /^\d+[A-Za-z]?$/.test(meeting.where.trim());
+const announcementWhere = looksLikeRoomNumber ? `rm ${meeting.where}` : meeting.where;
+
+/**
  * A ready-made announcement, for pasting into Remind or Discord. We do not
  * integrate with Remind — it would need a server we do not have, and a person
  * still writes the message either way — so the site just makes the message
  * trivial to produce.
+ *
+ * WHY THIS IS WRITTEN SO TERSELY
+ * ==============================
+ *   1. It must fit in ANNOUNCEMENT_LIMIT characters, because Remind cuts the
+ *      end off and the end is the link.
+ *   2. Every character must be plain ASCII. One fancy character — a curly
+ *      quote, an en dash, the '·' that `meeting.time` puts between 'Lunch'
+ *      and the hours — re-encodes the whole text message, halving how much
+ *      fits. That is why the separator is a plain hyphen and why we read
+ *      `meeting.starts` rather than the prettier `meeting.time`.
+ *   3. No agenda and no labels. What the meeting is about changes often and
+ *      does not survive being squeezed into a sentence fragment, so the
+ *      message carries the link and the page carries the detail.
  */
-const announcement = [
-  `Dev Club — ${dateFormat.format(meeting.date)}, ${meeting.time}, ${meeting.where}.`,
-  meeting.agenda.length ? ` We're doing: ${meeting.agenda[0].toLowerCase()}.` : '',
-  ` Details: ${SITE_URL}${href(`/meetings/${meeting.id}`)}`,
-].join('');
+const announcementLink = `${SITE_URL}${href(`/meetings/${meeting.id}`)}`;
+
+/**
+ * Builds the message and, if it somehow runs long, gives up detail in a fixed
+ * order rather than letting the end be chopped.
+ *
+ * Nothing standard gets close to the limit — a normal meeting lands around
+ * 110 characters. This exists for the cases that are not standard: a meeting
+ * moved to 'the multipurpose room behind the gym', or a future move to a
+ * longer domain. The link is never shortened, since a cut link is worse than
+ * no message at all.
+ */
+function buildAnnouncement(): string {
+  const attempts = [
+    // Everything.
+    `Dev Club - ${announcementDate} ${shortTime(meeting.starts)} in ${announcementWhere}. ${announcementLink}`,
+    // Drop the weekday; the numeric date still carries the day.
+    `Dev Club - ${announcementDate.split(' ').slice(1).join(' ')} ${shortTime(meeting.starts)} in ${announcementWhere}. ${announcementLink}`,
+    // Drop where it is. The page has it, and the link still works.
+    `Dev Club - ${announcementDate.split(' ').slice(1).join(' ')} ${shortTime(meeting.starts)}. ${announcementLink}`,
+  ];
+
+  return (
+    attempts.find((attempt) => attempt.length <= ANNOUNCEMENT_LIMIT) ??
+    // Every version was too long, which means the link alone nearly fills the
+    // budget. Send the link — it is the one part that has to survive.
+    `Dev Club ${announcementLink}`
+  );
+}
+
+const announcement = buildAnnouncement();
 ---
 
 <BaseLayout
@@ -234,15 +318,19 @@ const announcement = [
           >
             {announcement}
           </p>
-          <button
-            type="button"
-            id="copy-announcement"
-            hidden
-            class="mt-3 inline-flex items-center gap-2 rounded border border-edge px-4 py-2 font-mono text-xs text-bone transition-colors hover:border-gold hover:text-gold"
-          >
-            <Icon name="lucide:copy" class="h-3.5 w-3.5" />
-            Copy for Remind
-          </button>
+          <div class="mt-3 flex flex-wrap items-center gap-3">
+            <button
+              type="button"
+              id="copy-announcement"
+              hidden
+              class="inline-flex items-center gap-2 rounded border border-edge px-4 py-2 font-mono text-xs text-bone transition-colors hover:border-gold hover:text-gold"
+            >
+              <Icon name="lucide:copy" class="h-3.5 w-3.5" />
+              Copy for Remind
+            </button>
+            {/* Filled in by the script below, so it never shows a stale count. */}
+            <span id="announcement-count" class="font-mono text-xs text-muted" />
+          </div>
         </div>
       )
     }
@@ -254,6 +342,33 @@ const announcement = [
   // actually do the copying, so nobody clicks something that does nothing.
   const button = document.getElementById('copy-announcement');
   const text = document.getElementById('announcement')?.textContent?.trim();
+
+  /**
+   * Show how much of Remind's 140-character budget the message uses.
+   *
+   * The builder already guarantees it fits, so this is a readout rather than
+   * a warning — it is here so that whoever edits the wording can see the cost
+   * of a change straight away instead of finding out from Remind.
+   *
+   * It also checks for non-ASCII characters. One curly quote or dash pasted
+   * into the wording re-encodes the whole text message and halves how much
+   * fits, and that is invisible unless something says so.
+   */
+  const count = document.getElementById('announcement-count');
+
+  if (count && text) {
+    const LIMIT = 140;
+    const plainAscii = /^[\x20-\x7E]*$/.test(text);
+
+    count.textContent = plainAscii
+      ? `${text.length}/${LIMIT} characters`
+      : `${text.length}/${LIMIT} characters \u2014 a fancy character is costing you space`;
+
+    // Amber as it gets close, or whenever a non-ASCII character sneaks in.
+    if (!plainAscii || text.length > LIMIT - 15) {
+      count.classList.replace('text-muted', 'text-gold');
+    }
+  }
 
   if (button && text && navigator.clipboard) {
     button.hidden = false;
