@@ -348,6 +348,111 @@ joke is never at a visitor's expense.
 
 ---
 
+## Add a scene to the hidden story
+
+The knight is not the only way past the front door. There is a branching text
+adventure hidden in the same terminal, and **this is the best first thing to
+contribute to the site.** It is one file, it cannot collide with anybody
+else's work, and the thing you write is something people will actually play.
+
+### Play it first
+
+You cannot write a room for a game you have not been inside. Open the terminal
+on the front page and type `cat .secrets`. Whoever was here before you left
+notes, and the notes are the trail. Nobody is going to tell you the way in;
+that is the whole point of it being hidden.
+
+### How the story is put together
+
+Every room is one Markdown file in [`src/content/story/`](src/content/story/).
+A file says which room it hangs off, what the reader types to get there, and
+what they find.
+
+**A scene names its parent, never its children.** That is the important bit,
+and it is deliberate. If a room listed the ways out of itself, then everyone
+adding a room would have to edit the same file, and ten people adding a room
+in one meeting would mean nine merge conflicts. Because your file names the
+room it hangs off, you add one new file, you change nothing else, and ten
+people can work at once without ever touching each other's work.
+
+Your scene branches the story. The copy of the code you write it in is called
+a branch too. Same word, very nearly the same idea — which is the other reason
+this is the first thing we hand new members.
+
+### Write one
+
+1. Go to [`src/content/story/`](src/content/story/) and read a couple of the
+   existing scenes, so you know where yours fits.
+2. Use the **Write a scene on GitHub** button on the
+   [Start here](https://novato-high-school.github.io/Dev-Club/start) page. It
+   opens a new file with the template already filled in.
+3. Name the file after your room, lowercase with dashes: `server-closet.md`.
+4. Edit it:
+
+```markdown
+---
+from: sub-level
+choice: knock
+ending: true
+author: your-github-username
+---
+
+Write what the reader finds here. Keep the lines short - about 68
+characters - because this gets printed into a terminal.
+```
+
+5. **Commit changes**, then **Create a new branch and start a pull request**.
+
+### What each field means
+
+| Field    | What to put                                                                    |
+| -------- | ------------------------------------------------------------------------------ |
+| `from`   | The scene yours hangs off: another file's name, without the `.md`.              |
+| `choice` | What the reader types to get to your scene. One or two words.                   |
+| `ending` | `true` if your scene finishes the story and lets the reader into the site.      |
+| `author` | Your GitHub username, so you get the credit. **Never a real name.**             |
+| `command`| Entrances only — the secret word that starts a whole new storyline. No `from`.  |
+| `hint`   | Leave this out. See below.                                                      |
+
+### Rules the check will enforce
+
+The build refuses a broken story, so a mistake shows up as a red X on your
+pull request with your filename in it. That is the check working, not you
+failing. It will tell you if:
+
+- your `from` names a scene that does not exist (usually a typo)
+- your scene neither leads anywhere nor sets `ending: true`, so the story just
+  stops with nothing for the reader to do
+- your `choice` is a word the terminal keeps for itself
+- somebody already used that `choice` in the same room
+- a storyline can be started but never finished
+
+**Words you cannot use** for a `choice` or a `command`: `back`, `exit`,
+`quit`, `run`, `flee`, `help`, `clear`, `secrets`, `.secrets`, and
+`cat .secrets`. The terminal answers to
+these itself, before it looks at any scene, so that a reader can always get
+out of the story no matter what anybody writes. A scene that tried to use one
+would silently never fire, so the check stops it instead.
+
+### Starting a whole new storyline
+
+Set `command:` instead of `from:` and `choice:`, and your scene becomes an
+entrance — a secret word somebody has to find. Entrances are not listed
+anywhere on purpose.
+
+Leave `hint:` out. A hint puts a clue in `cat .secrets`, and if every entrance
+had one, that file would turn back into a directory listing and the mystery
+would die. An advisor promotes an entrance to a clue when it deserves one.
+
+### Keep it in the voice
+
+Spare, dry, a bit uncanny; a school that goes further down than it should. The
+terminal is pompous, not mean, and it is never at a visitor's expense. The
+story ends by letting somebody in, so endings should feel like a door opening
+rather than a prize being awarded.
+
+---
+
 ## Recruiting: the rescue-code offer
 
 During a recruiting push, anyone who **wins** the boss fight (not someone who
