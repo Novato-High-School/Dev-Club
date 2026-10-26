@@ -39,6 +39,8 @@ export interface Scene {
   command: string | null;
   /** True if reaching this scene offers the way into the site. */
   ending: boolean;
+  /** True on the one storyline the knight's win screen offers to continue into. */
+  afterKnight: boolean;
   /** Cryptic clue for `cat .secrets`, when an advisor has promoted one. */
   hint: string | null;
   /** GitHub username of whoever wrote it. */
@@ -70,6 +72,7 @@ function toScene(entry: CollectionEntry<'story'>): Scene {
     choice: entry.data.choice ?? null,
     command: entry.data.command ?? null,
     ending: entry.data.ending,
+    afterKnight: entry.data.afterKnight,
     hint: entry.data.hint ?? null,
     author: entry.data.author ?? null,
     body: entry.body ?? '',
@@ -103,6 +106,20 @@ export function findStoryProblems(scenes: Scene[]): string[] {
     } else {
       seenCommands.set(word, scene.id);
     }
+  }
+
+  // Two storylines both claiming to be the one the knight leads into. The
+  // terminal can only offer one "Keep going", so the other would quietly
+  // never be reached that way and look as though the flag did nothing.
+  const sequels = scenes.filter((scene) => scene.afterKnight);
+  if (sequels.length > 1) {
+    problems.push(
+      `More than one scene is marked "afterKnight: true": ` +
+        `${sequels.map((scene) => `${scene.id}.md`).join(', ')}. The knight's ` +
+        `win screen can only offer one storyline, so leave it on one of them ` +
+        `and remove it from the others — they are all still reachable by ` +
+        `their own secret word.`,
+    );
   }
 
   // A `from` that names a scene nobody wrote. Nearly always a typo, and the

@@ -52,6 +52,8 @@ interface StoryScene {
   command: string | null;
   /** Reaching this scene opens the way into the site. */
   ending: boolean;
+  /** This is the storyline the knight's win screen offers to continue into. */
+  afterKnight: boolean;
   /** Cryptic clue for `.secrets`, on the entrances an advisor has promoted. */
   hint: string | null;
   /** The scene text. */
@@ -415,6 +417,37 @@ export function startBootTerminal(options: BootOptions): void {
   const scenes = loadScenes();
   /** Once someone is through, typing is finished. */
   let granted = false;
+  /**
+   * True from the moment the visitor earns their way in, and it stays true.
+   *
+   * `granted` goes back to false when somebody takes the story offer, because
+   * the terminal starts taking typing again. This one does not, so backing
+   * out of the story afterwards can put the door back rather than stranding
+   * them at a prompt they have already beaten.
+   */
+  let earnedAccess = false;
+  /**
+   * The row of buttons on the win screen, so a second win screen can replace
+   * the first rather than stacking a new row underneath it.
+   */
+  let actionsRow: HTMLElement | null = null;
+  /**
+   * The rescue code this visit generated, if any.
+   *
+   * Kept because the win screen can be shown more than once now — win the
+   * fight, keep going, finish the story — and the code is only printed the
+   * first time. Holding on to it means the "Sign up now" link can be rebuilt
+   * on the second screen with the same code, instead of vanishing.
+   */
+  let rescueOffer: { code: string; url: string | null } | null = null;
+  /**
+   * Whether the lines inviting somebody into the story have been printed.
+   *
+   * The button can be offered more than once — leaving the story puts it back
+   * — but the prose describing the dark room only makes sense the first time,
+   * before they have been in it.
+   */
+  let storyInvited = false;
 
   // ---------------------------------------------------------------------
   // Printing to the screen
@@ -570,14 +603,19 @@ export function startBootTerminal(options: BootOptions): void {
     }
 
     fight = null;
-    await grantAccess([
-      ['', 'normal'],
-      ['  ✓ FIREWALL DOWN', 'success'],
-      ['  ✓ ACCESS GRANTED', 'success'],
-      ['', 'normal'],
-      ['  Welcome to Dev Club.', 'normal'],
-      ['', 'normal'],
-    ]);
+    await grantAccess(
+      [
+        ['', 'normal'],
+        ['  ✓ FIREWALL DOWN', 'success'],
+        ['  ✓ ACCESS GRANTED', 'success'],
+        ['', 'normal'],
+        ['  Welcome to Dev Club.', 'normal'],
+        ['', 'normal'],
+      ],
+      // Only the fight offers the story. Finishing a storyline must not
+      // offer the same storyline straight back.
+      { offerStory: true },
+    );
   }
 
   // ---------------------------------------------------------------------
@@ -638,14 +676,37 @@ export function startBootTerminal(options: BootOptions): void {
     print('');
   }
 
-  /** Leaves the story and returns to the prompt. */
-  function leaveStory(message: string): void {
+  /**
+   * Leaves the story and returns to the prompt.
+   *
+   * With one exception: somebody who got here by beating the knight has
+   * already earned their way in, and walking back out of a storyline they
+   * lost interest in must not take that away. For them the win screen comes
+   * back instead of a bare prompt, because the alternative is a visitor who
+   * won, went for a wander, and is now stuck behind a door they already
+   * opened — in 'hard' mode there is no Skip button to rescue them with.
+   */
+  async function leaveStory(message: string): Promise<void> {
     scene = null;
     sceneTrail.length = 0;
     input.placeholder = 'type help';
     print('');
     print(message, 'dim');
     print('');
+
+    if (earnedAccess) {
+      await grantAccess(
+        [
+          ['  The way in is still open.', 'normal'],
+          ['', 'normal'],
+        ],
+        // Offered again, so changing your mind about the story is not
+        // punished. The invitation lines above it are not reprinted —
+        // `storyInvited` has seen to that — because by now they have been in
+        // the room and do not need it described to them.
+        { offerStory: true },
+      );
+    }
   }
 
   /**
@@ -659,14 +720,14 @@ export function startBootTerminal(options: BootOptions): void {
     const text = raw.trim();
 
     if (STORY_EXITS.test(text)) {
-      leaveStory('You step back out into the dark, and the prompt is waiting.');
+      await leaveStory('You step back out into the dark, and the prompt is waiting.');
       return;
     }
 
     if (STORY_BACK.test(text)) {
       const previous = sceneTrail.pop();
       if (!previous) {
-        leaveStory('You climb back up. The hatch closes behind you.');
+        await leaveStory('You climb back up. The hatch closes behind you.');
         return;
       }
       await showScene(previous);
@@ -726,36 +787,88 @@ export function startBootTerminal(options: BootOptions): void {
    * because anything the fight gives you that a storyline does not turns the
    * story into a consolation prize. `headline` is the only thing that differs:
    * the few lines that say what you just did.
+   *
+   * `offerStory` adds the way on into the story. Beating the knight used to
+   * be the end of the terminal, which meant the story — the thing club
+   * members write rooms for — was only ever seen by the few people who found
+   * its secret word. Now the win screen offers to keep going, so the story is
+   * a second act rather than a path not taken.
+   *
+   * The fight sets it, and so does backing out of the story. Finishing a
+   * storyline does not: there is nothing left to offer somebody who has just
+   * played it to the end.
    */
-  async function grantAccess(headline: [string, LineStyle][]): Promise<void> {
+  async function grantAccess(
+    headline: [string, LineStyle][],
+    { offerStory = false }: { offerStory?: boolean } = {},
+  ): Promise<void> {
     granted = true;
+    earnedAccess = true;
     input.disabled = true;
+
+    // A previous win screen, if the visitor went for a wander and came back.
+    actionsRow?.remove();
+    actionsRow = null;
 
     await printSequence(headline, reducedMotion ? 0 : 260);
 
     // During recruiting, getting through under your own steam (never a skip)
     // also earns a rubber ducky — beating the knight and finishing a storyline
-    // count the same. Show it at most once per browser, and only print it —
-    // never gate entry to the site on it — so it stays an offer, not another
-    // wall to get past.
-    const offerRescue = isRecruitingActive() && !hasSeenKey(RESCUE_STORAGE_KEY);
-    let rescueCode = '';
-    let rescueFormUrl: string | null = null;
-    if (offerRescue) {
+    // count the same. Offered at most once per browser, and only ever printed
+    // — entry to the site is never gated on it — so it stays an offer rather
+    // than another wall to get past.
+    const firstRescue = isRecruitingActive() && !hasSeenKey(RESCUE_STORAGE_KEY);
+    if (firstRescue) {
       rememberKey(RESCUE_STORAGE_KEY);
-      // Generated once and reused below for the "Sign up now" link, so the
-      // code on screen always matches the one the form gets pre-filled with
-      // — calling generateRescueCode() twice could straddle a minute change.
-      rescueCode = generateRescueCode();
-      rescueFormUrl = buildPrefilledRescueFormUrl(rescueCode);
+      // Generated once and kept in `rescueOffer`, so the code on screen always
+      // matches the one the form gets pre-filled with — calling
+      // generateRescueCode() twice could straddle a minute change.
+      const code = generateRescueCode();
+      rescueOffer = { code, url: buildPrefilledRescueFormUrl(code) };
+    }
+
+    // Reprinted on every win screen, not just the first. Taking the story
+    // offer clears the terminal, so a code printed once would be scrolled
+    // away by the time somebody came back out of the story — and if the form
+    // is not set up to pre-fill it, that code is the only copy they have.
+    if (rescueOffer) {
       await printSequence(
         [
-          ["  You're in... rescue your rubber ducky!", 'gold'],
+          firstRescue
+            ? ["  You're in... rescue your rubber ducky!", 'gold']
+            : ['  Your rubber ducky is still waiting.', 'gold'],
           ['', 'normal'],
-          [`  Your rescue code: ${rescueCode}`, 'success'],
-          rescueFormUrl
+          [`  Your rescue code: ${rescueOffer.code}`, 'success'],
+          rescueOffer.url
             ? ['  It should be waiting for you on the form — just submit.', 'dim']
             : ['  Type it into the form when you get there.', 'dim'],
+          ['', 'normal'],
+        ],
+        reducedMotion ? 0 : 260,
+      );
+    }
+
+    const offerRescue = rescueOffer !== null;
+
+    /**
+     * The storyline the knight leads into: whichever scene has claimed the
+     * job with `afterKnight: true`. No scene marked, no offer — the win
+     * screen then works exactly the way it always did, which is what makes
+     * this safe to leave switched off.
+     */
+    const continuation = offerStory
+      ? scenes.find((candidate) => candidate.afterKnight) ?? null
+      : null;
+
+    if (continuation && !storyInvited) {
+      storyInvited = true;
+      await printSequence(
+        [
+          ['  The way in is open. Nobody is stopping you now.', 'normal'],
+          ['', 'normal'],
+          ['  Though the room the knight was standing in front of is', 'dim'],
+          ['  darker than it should be, and the air at the back of it', 'dim'],
+          ['  is moving.', 'dim'],
           ['', 'normal'],
         ],
         reducedMotion ? 0 : 260,
@@ -775,7 +888,7 @@ export function startBootTerminal(options: BootOptions): void {
 
     if (offerRescue) {
       const signUp = document.createElement('a');
-      signUp.href = rescueFormUrl ?? href('/join');
+      signUp.href = rescueOffer!.url ?? href('/join');
       signUp.target = '_blank';
       signUp.rel = 'noopener';
       signUp.className =
@@ -803,8 +916,48 @@ export function startBootTerminal(options: BootOptions): void {
     enter.addEventListener('click', () => finish());
     actions.appendChild(enter);
 
+    // The way on into the story, kept quiet on purpose: entering the site is
+    // still the obvious thing to do, and this is the one for anybody curious
+    // enough to wonder what the knight was guarding.
+    if (continuation) {
+      const keepGoing = document.createElement('button');
+      keepGoing.type = 'button';
+      keepGoing.className =
+        'rounded px-5 py-2.5 font-mono text-sm text-muted transition-colors hover:text-gold';
+      keepGoing.textContent = 'Keep going →';
+      keepGoing.addEventListener('click', () => void resumeStory(continuation));
+      actions.appendChild(keepGoing);
+    }
+
     form.parentElement!.appendChild(actions);
+    actionsRow = actions;
     (focusTarget ?? enter).focus({ preventScroll: true });
+  }
+
+  /**
+   * Hands the terminal back to the visitor and opens the storyline.
+   *
+   * The win screen shut typing down, so this has to undo that before the
+   * story can take a word. `earnedAccess` stays true throughout, which is
+   * what lets them back out of the story later without losing the door.
+   */
+  async function resumeStory(entrance: StoryScene): Promise<void> {
+    // They beat the knight. Choosing to look around first must not mean
+    // fighting it again on the next page or the next visit.
+    rememberKey(storageKey);
+
+    actionsRow?.remove();
+    actionsRow = null;
+    granted = false;
+    input.disabled = false;
+    form.hidden = false;
+
+    // A clean screen, the same way the fight starts on one: this is a new
+    // act, and the scene wants the room to itself.
+    screen.replaceChildren();
+
+    await startStory(entrance);
+    input.focus();
   }
 
   /** Runs one typed command. */

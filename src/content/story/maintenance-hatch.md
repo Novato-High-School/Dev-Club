@@ -1,5 +1,6 @@
 ---
 command: hatch
+afterKnight: true
 hint: The cold air along the back wall is coming from somewhere.
 ---
 Behind the last rack, a maintenance hatch has been propped open with
