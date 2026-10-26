@@ -185,8 +185,9 @@ What that opens up:
 **The story is now on the main road.** It used to be reachable only by finding
 a secret word, which meant the thing we ask new members to write rooms for was
 seen by almost nobody. Beating the knight now offers **Keep going**, and that
-opens whichever storyline is marked `afterKnight: true` — `maintenance-hatch`
-today. The secret words still work and are still unlisted.
+opens whichever storyline is marked `afterKnight: true` — `the-threshold`
+today, which puts the reader at the open door behind the knight and asks
+whether they go through. The secret words still work and are still unlisted.
 
 - [ ] **Move `afterKnight` as the story grows.** It is one flag on one file,
       and it decides which storyline most visitors see. When members have

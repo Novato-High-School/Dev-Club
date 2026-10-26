@@ -866,9 +866,7 @@ export function startBootTerminal(options: BootOptions): void {
         [
           ['  The way in is open. Nobody is stopping you now.', 'normal'],
           ['', 'normal'],
-          ['  Though the room the knight was standing in front of is', 'dim'],
-          ['  darker than it should be, and the air at the back of it', 'dim'],
-          ['  is moving.', 'dim'],
+          ['  The knight was standing in front of something, though.', 'dim'],
           ['', 'normal'],
         ],
         reducedMotion ? 0 : 260,
@@ -963,7 +961,13 @@ export function startBootTerminal(options: BootOptions): void {
   /** Runs one typed command. */
   async function run(raw: string): Promise<void> {
     const text = raw.trim();
-    if (text === '') return;
+    if (text === '') {
+      // Mid-story, an empty line is somebody pressing Enter without typing.
+      // That is easy to do when the choice on screen is the word "enter",
+      // and silence is a poor answer to it, so the choices come back round.
+      if (scene) printSceneChoices();
+      return;
+    }
 
     echo(text);
 

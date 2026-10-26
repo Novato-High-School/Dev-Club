@@ -361,7 +361,7 @@ You cannot write a room for a game you have not been inside.
 
 Open the terminal on the front page and get past the firewall knight. When it
 goes down, the win screen offers you the site — take **Keep going** instead,
-and the story starts in the room the knight was standing in front of.
+and you are left standing at the open door the knight was guarding.
 
 There is a second way in, and nobody is going to tell you what it is. Type
 `cat .secrets` and read what the last person left behind; the notes are the
@@ -465,7 +465,7 @@ how many people will ever see it:
 
 | Route | Who takes it |
 | --- | --- |
-| Beat the knight, then **Keep going** | Most visitors. It opens the storyline marked `afterKnight`, which today is `maintenance-hatch.md`. |
+| Beat the knight, then **Keep going** | Most visitors. It opens the storyline marked `afterKnight`, which today is `the-threshold.md`. |
 | Type the secret word at the prompt | Anyone who reads `cat .secrets` or is told. Opens any entrance. |
 
 So a scene hanging off `sub-level.md` is on the main road. A scene hanging off
