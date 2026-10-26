@@ -348,19 +348,24 @@ joke is never at a visitor's expense.
 
 ---
 
-## Add a scene to the hidden story
+## Add a scene to the story
 
-The knight is not the only way past the front door. There is a branching text
-adventure hidden in the same terminal, and **this is the best first thing to
+Beating the knight is not the end of the terminal. There is a branching text
+adventure on the other side of it, and **this is the best first thing to
 contribute to the site.** It is one file, it cannot collide with anybody
 else's work, and the thing you write is something people will actually play.
 
 ### Play it first
 
-You cannot write a room for a game you have not been inside. Open the terminal
-on the front page and type `cat .secrets`. Whoever was here before you left
-notes, and the notes are the trail. Nobody is going to tell you the way in;
-that is the whole point of it being hidden.
+You cannot write a room for a game you have not been inside.
+
+Open the terminal on the front page and get past the firewall knight. When it
+goes down, the win screen offers you the site — take **Keep going** instead,
+and you are left standing at the open door the knight was guarding.
+
+There is a second way in, and nobody is going to tell you what it is. Type
+`cat .secrets` and read what the last person left behind; the notes are the
+trail. Both routes land in the same story.
 
 ### How the story is put together
 
@@ -413,6 +418,7 @@ characters - because this gets printed into a terminal.
 | `author` | Your GitHub username, so you get the credit. **Never a real name.**             |
 | `command`| Entrances only — the secret word that starts a whole new storyline. No `from`.  |
 | `hint`   | Leave this out. See below.                                                      |
+| `afterKnight` | Leave this out. See below.                                                 |
 
 ### Rules the check will enforce
 
@@ -443,6 +449,27 @@ anywhere on purpose.
 Leave `hint:` out. A hint puts a clue in `cat .secrets`, and if every entrance
 had one, that file would turn back into a directory listing and the mystery
 would die. An advisor promotes an entrance to a clue when it deserves one.
+
+Leave `afterKnight:` out too. That flag marks the **one** storyline the
+knight's win screen offers to continue into, which is the route most visitors
+take, so it is not first come first served — an advisor moves it. The build
+refuses to run if two scenes claim it, and it only belongs on an entrance,
+because the offer has to start a storyline somewhere. Everything else stays
+reachable by its own secret word, which is the normal way a new storyline is
+found.
+
+### How a reader actually gets to your scene
+
+Worth knowing before you choose where to hang your room, because it decides
+how many people will ever see it:
+
+| Route | Who takes it |
+| --- | --- |
+| Beat the knight, then **Keep going** | Most visitors. It opens the storyline marked `afterKnight`, which today is `the-threshold.md`. |
+| Type the secret word at the prompt | Anyone who reads `cat .secrets` or is told. Opens any entrance. |
+
+So a scene hanging off `sub-level.md` is on the main road. A scene hanging off
+a brand new entrance of your own is a genuine secret, and will stay one.
 
 ### Keep it in the voice
 

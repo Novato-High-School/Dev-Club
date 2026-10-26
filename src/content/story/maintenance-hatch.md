@@ -1,6 +1,6 @@
 ---
-command: hatch
-hint: The cold air along the back wall is coming from somewhere.
+from: the-threshold
+choice: enter
 ---
 Behind the last rack, a maintenance hatch has been propped open with
 a textbook. Chemistry, 2009. Nobody has come back for it.

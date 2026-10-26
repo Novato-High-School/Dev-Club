@@ -182,6 +182,29 @@ What that opens up:
       first code contribution — see CONTRIBUTING.md. Good task for somebody who
       has done a Markdown PR and wants to touch real code next.
 
+**The story is now on the main road.** It used to be reachable only by finding
+a secret word, which meant the thing we ask new members to write rooms for was
+seen by almost nobody. Beating the knight now offers **Keep going**, and that
+opens whichever storyline is marked `afterKnight: true` — `the-threshold`
+today, which puts the reader at the open door behind the knight and asks
+whether they go through. The secret words still work and are still unlisted.
+
+- [ ] **Move `afterKnight` as the story grows.** It is one flag on one file,
+      and it decides which storyline most visitors see. When members have
+      written enough rooms that a different branch is the better front door,
+      move it. The build refuses if two scenes claim it.
+- [x] **The win screen during a recruiting push.** Winning can now show three
+      things at once: the rescue code, "Sign up now", and "Keep going". Tested
+      by moving the `RECRUITING` window over today and walking it on a 390px
+      screen: the three stack, "Sign up now" stays the obvious one, the code is
+      reprinted after the story detour, and the sign-up link comes back with
+      the same code on it.
+- [ ] **Mind what the detour does to a rescue code's age.** The code is still
+      the minute it was *generated*, so somebody who plays the story before
+      signing up decodes as several minutes slower. That is honest — it is how
+      long they took — but worth remembering before reading anything into the
+      numbers.
+
 ---
 
 ## 6. Fill it with real content

@@ -253,6 +253,13 @@ const story = defineCollection({
       // site. Every storyline needs at least one of these somewhere.
       ending: z.boolean().default(false),
 
+      // ENTRANCES ONLY. Set true on the one storyline the firewall knight
+      // leads into. Beat the knight and the win screen offers "Keep going",
+      // which drops the reader straight into this scene — so the story is
+      // something everybody is shown, not only the people who find the
+      // secret word. Exactly one scene may claim it; see src/lib/story.ts.
+      afterKnight: z.boolean().default(false),
+
       // ENTRANCES ONLY, and optional. A cryptic clue for `cat .secrets`, the
       // in-terminal list of things left to find. Leave this out when you add
       // an entrance: an advisor decides which entrances get a public clue, so
@@ -313,6 +320,21 @@ const story = defineCollection({
           message:
             'This scene has a `from` but no `choice`, so there is nothing for ' +
             'the reader to type to reach it. Add `choice: <a word or two>`.',
+        });
+      }
+
+      // `afterKnight` makes the knight's win screen offer this scene, and the
+      // terminal opens it exactly the way the secret word does. A scene in
+      // the middle of a storyline has no secret word to open it with, so the
+      // offer would have nowhere sensible to start.
+      if (!isEntrance && scene.afterKnight) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ['afterKnight'],
+          message:
+            '`afterKnight` belongs on the START of a storyline, and this ' +
+            'scene continues one. Put it on the scene that has `command:`, ' +
+            'or remove it from here.',
         });
       }
 
