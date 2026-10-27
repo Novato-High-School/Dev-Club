@@ -1,0 +1,14 @@
+---
+title: Follow-up "Your First Fork" 
+agenda:
+  - Work time
+  - Answered some questions about forking the Dev-Club repo
+links:
+  - label: Meetings
+    url: /meetings
+---
+Members in Attendance: 
+  - OliverM23, ns-tau, BenActivity, HeximalCalculus, bjknudson
+
+Notes:
+  - Successful forking by 4 members. Important to watch the destination of where the fork is being sent... members do not have write access to the organization so they need to fork to their own github. 
