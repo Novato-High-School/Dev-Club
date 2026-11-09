@@ -384,15 +384,28 @@ Your scene branches the story. The copy of the code you write it in is called
 a branch too. Same word, very nearly the same idea — which is the other reason
 this is the first thing we hand new members.
 
+### Decide where it goes
+
+Open the [story map](https://novato-high-school.github.io/Dev-Club/story-map).
+It draws every room in the shape the story actually has, and every room on it
+has an **Add a room here** button that opens a new file already pointing at
+that room. That is the whole "where does mine go" question answered in one
+click, so start there rather than guessing from the folder listing.
+
+The map is generated from the files themselves, so it is never out of date:
+merge a room and it is on the map at the next deploy. It also gives the whole
+story away, endings included — play it before you read it.
+
 ### Write one
 
-1. Go to [`src/content/story/`](src/content/story/) and read a couple of the
-   existing scenes, so you know where yours fits.
-2. Use the **Write a scene on GitHub** button on the
-   [Start here](https://novato-high-school.github.io/Dev-Club/start) page. It
-   opens a new file with the template already filled in.
-3. Name the file after your room, lowercase with dashes: `server-closet.md`.
-4. Edit it:
+1. Open the [story map](https://novato-high-school.github.io/Dev-Club/story-map)
+   and press **Add a room here** on the room yours should follow. GitHub opens
+   a new file with the template in it and `from:` already pointing at that
+   room.
+2. Name the file after what is in your room, lowercase with dashes:
+   `server-closet.md`. Not a number — see below.
+3. Edit it. Check the map for the words already used in that room, because two
+   rooms cannot share a `choice` in the same place:
 
 ```markdown
 ---
@@ -406,7 +419,7 @@ Write what the reader finds here. Keep the lines short - about 68
 characters - because this gets printed into a terminal.
 ```
 
-5. **Commit changes**, then **Create a new branch and start a pull request**.
+4. **Commit changes**, then **Create a new branch and start a pull request**.
 
 ### What each field means
 
@@ -465,11 +478,32 @@ how many people will ever see it:
 
 | Route | Who takes it |
 | --- | --- |
-| Beat the knight, then **Keep going** | Most visitors. It opens the storyline marked `afterKnight`, which today is `the-threshold.md`. |
+| Beat the knight, then **Keep going** | Most visitors. It opens the storyline marked `afterKnight` — the [story map](https://novato-high-school.github.io/Dev-Club/story-map) shows which one that is. |
 | Type the secret word at the prompt | Anyone who reads `cat .secrets` or is told. Opens any entrance. |
 
-So a scene hanging off `sub-level.md` is on the main road. A scene hanging off
-a brand new entrance of your own is a genuine secret, and will stay one.
+So a room on the main chain is on the main road. A room hanging off a brand
+new entrance of your own is a genuine secret, and will stay one.
+
+### Why the rooms are not numbered
+
+This comes up every time somebody sees the map, so it is written down here.
+
+**A room's filename is its name.** `from: sub-level` finds `sub-level.md`.
+Rename that file and every room pointing at it breaks, and the build refuses
+until they are all fixed.
+
+So numbering the files — `01-the-threshold.md`, `02-maintenance-hatch.md` —
+would cost more than it bought:
+
+- The story is a **tree, not a line**. Two rooms hanging off the same room are
+  side by side, not one after the other, so there is no honest "room 4".
+- Adding a room in the middle would mean **renumbering the ones after it**,
+  which means editing files other people are working on. That is the exact
+  merge conflict the parent-names-the-child design exists to prevent.
+- Two people in the same meeting would both reach for `05-`.
+
+The map works the order out from the files instead, so nothing has to be kept
+in step by hand. Name your room after what is in it, and put it anywhere.
 
 ### Keep it in the voice
 
