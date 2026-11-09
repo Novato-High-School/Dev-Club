@@ -1,0 +1,290 @@
+---
+/**
+ * THE STORY MAP
+ * =============
+ * Every room in the story, drawn in the shape it actually has, with a button
+ * on each one that opens a new file already hanging off it.
+ *
+ * WHY THIS PAGE EXISTS
+ * --------------------
+ * "Where do I put my new room?" is the question that stops people, and it is
+ * hard to answer from the folder listing: a scene names its parent, so the
+ * shape of the story is spread across seven files and visible in none of
+ * them. This page reads the same graph the terminal does and draws it.
+ *
+ * It is NOT a hand-written list. Everything below comes from
+ * src/content/story/ at build time, so it cannot drift out of date — add a
+ * room and it appears here on the next deploy, with no second file to update.
+ * That is the whole reason it is a page and not a paragraph in CONTRIBUTING.
+ *
+ * It is deliberately not in the top menu. It gives away every room and both
+ * endings, and it is for people about to write one, not for visitors.
+ */
+
+import { Icon } from 'astro-icon/components';
+
+import BaseLayout from '../layouts/BaseLayout.astro';
+import HexGrid from '../components/HexGrid.astro';
+import Prompt from '../components/Prompt.astro';
+import { loadStory, newSceneUrl, type StoryNode } from '../lib/story';
+import { href } from '../lib/href';
+import { CLUB } from '../config/site';
+
+const story = await loadStory();
+const byId = new Map(story.map((node) => [node.id, node]));
+
+/** One room, plus how deep it sits, ready to draw as a single row. */
+interface Row {
+  node: StoryNode;
+  depth: number;
+}
+
+/**
+ * Walks the story from each entrance and flattens it into rows.
+ *
+ * Depth-first, so a room is followed immediately by the rooms that lead off
+ * it — which is the order somebody reads a tree in, and the order they need
+ * to see it in to work out where their own room belongs.
+ */
+function flatten(node: StoryNode, depth: number, rows: Row[]): void {
+  rows.push({ node, depth });
+  for (const child of node.choices) {
+    const full = byId.get(child.id);
+    if (full) flatten(full, depth + 1, rows);
+  }
+}
+
+const rows: Row[] = [];
+for (const entrance of story.filter((node) => node.command)) {
+  flatten(entrance, 0, rows);
+}
+
+// A few counts for the summary line, worked out rather than typed.
+const endings = story.filter((node) => node.ending).length;
+const storylines = story.filter((node) => node.command).length;
+const authors = new Set(story.map((node) => node.author).filter(Boolean)).size;
+
+const STORY_FOLDER = `${CLUB.githubOrg}/Dev-Club/tree/main/src/content/story`;
+
+/**
+ * The opening line of a room, for the preview under its heading.
+ *
+ * Scene bodies are hard-wrapped at about 68 characters so they print tidily
+ * into the terminal, which means the first LINE of one is usually half a
+ * sentence. This joins the first paragraph back into prose and then cuts it
+ * at a word boundary, so the preview reads as a sentence rather than as
+ * something that got clipped.
+ */
+function opening(body: string, limit = 110): string {
+  const paragraph = body.trim().split(/\n\s*\n/)[0].replace(/\s+/g, ' ').trim();
+  if (paragraph.length <= limit) return paragraph;
+  const cut = paragraph.slice(0, limit);
+  return `${cut.slice(0, cut.lastIndexOf(' '))}\u2026`;
+}
+---
+
+<BaseLayout
+  title="Story map"
+  description="Every room in the Dev Club text adventure, in the shape it actually has, with a button on each one that starts a new room hanging off it."
+>
+  <section class="relative overflow-hidden border-b border-edge">
+    <HexGrid class="opacity-50" />
+    <div class="relative mx-auto max-w-6xl px-5 py-16">
+      <Prompt command="dev-club story --map" />
+      <h1 class="mt-4 font-mono text-3xl font-bold tracking-tight sm:text-4xl">
+        Story map
+      </h1>
+      <p class="mt-5 max-w-2xl leading-relaxed text-muted">
+        Every room in the text adventure, drawn in the shape it actually has.
+        Find the room you want yours to come after, press <strong
+          class="font-medium text-bone">Add a room here</strong
+        >, and the new file opens already pointing at it.
+      </p>
+
+      <p class="mt-4 max-w-2xl font-mono text-sm text-muted">
+        {story.length} rooms &middot; {storylines} storyline{
+          storylines === 1 ? '' : 's'
+        } &middot; {endings} ending{endings === 1 ? '' : 's'}
+        {authors > 0 && <> &middot; {authors} credited</>}
+      </p>
+
+      {/* The one warning worth giving before anybody reads the rest. */}
+      <p
+        class="mt-6 flex max-w-2xl gap-2.5 rounded border border-gold/30 bg-gold/5 p-3 text-sm leading-relaxed text-bone"
+      >
+        <Icon name="lucide:eye-off" class="mt-0.5 h-4 w-4 shrink-0 text-gold" />
+        <span>
+          This is the back of the set. It gives away every room and both ways
+          the story ends, so play it first if you have not &mdash; the terminal
+          is on the <a href={href('/')} class="text-gold underline">front page</a
+          >, and the way through is the knight.
+        </span>
+      </p>
+    </div>
+  </section>
+
+  <section class="mx-auto max-w-3xl px-5 py-14">
+    {/* ------------------------------------------------------------------
+        HOW TO READ IT
+        Three sentences, because the map is only useful if somebody knows
+        what the indentation means before they start scanning it.
+    ------------------------------------------------------------------- */}
+    <div class="rounded-lg border border-edge bg-surface p-6">
+      <h2 class="font-mono text-lg font-semibold">How to read this</h2>
+      <ul class="mt-4 space-y-2.5 text-sm leading-relaxed text-muted">
+        <li>
+          <span class="font-mono text-gold">&gt; word</span> is what the reader
+          types to get into that room from the room above it.
+        </li>
+        <li>
+          Indented rooms hang off the one above. A room can have several rooms
+          under it &mdash; that is a fork in the story, not a mistake.
+        </li>
+        <li>
+          <span class="font-mono text-acid">ENDING</span> means the story finishes
+          there and the reader is let into the site. A storyline needs at least
+          one.
+        </li>
+      </ul>
+    </div>
+
+    {/* ------------------------------------------------------------------
+        THE MAP
+        One row per room, indented by depth. The indent is padding on the
+        row rather than nested elements, so the markup stays flat and the
+        rows all line up down the left edge whatever shape the story takes.
+    ------------------------------------------------------------------- */}
+    <ol class="mt-8 space-y-2">
+      {
+        rows.map(({ node, depth }) => (
+          <li
+            class="story-room rounded-lg border border-edge bg-surface p-4"
+            style={`--depth: ${Math.min(depth, 8)}`}
+          >
+            <div class="flex flex-wrap items-baseline gap-x-3 gap-y-1.5">
+              {/* How you get in: a secret word for an entrance, a typed
+                  choice for everything else. */}
+              {node.command ? (
+                <span class="font-mono text-sm font-semibold text-cyan">
+                  secret word: {node.command}
+                </span>
+              ) : (
+                <span class="font-mono text-sm font-semibold text-gold">
+                  &gt; {node.choice}
+                </span>
+              )}
+
+              <span class="font-mono text-xs text-muted">{node.id}.md</span>
+
+              {node.ending && (
+                <span class="rounded-full border border-acid/40 px-2 py-0.5 font-mono text-xs text-acid">
+                  ENDING
+                </span>
+              )}
+
+              {node.afterKnight && (
+                <span class="rounded-full border border-cyan/40 px-2 py-0.5 font-mono text-xs text-cyan">
+                  after the knight
+                </span>
+              )}
+
+              {/* Credit, by GitHub username. Never a real name. */}
+              {node.author && (
+                <a
+                  href={`https://github.com/${node.author}`}
+                  target="_blank"
+                  rel="noopener"
+                  class="font-mono text-xs text-muted transition-colors hover:text-gold"
+                >
+                  @{node.author}
+                </a>
+              )}
+            </div>
+
+            {/* The first line of the room, so the map reads as a story and
+                not only as a diagram of one. */}
+            <p class="mt-2 text-sm leading-relaxed text-muted">
+              {opening(node.body)}
+            </p>
+
+            <a
+              href={newSceneUrl(node.id)}
+              target="_blank"
+              rel="noopener"
+              class="mt-3 inline-flex items-center gap-2 rounded border border-edge px-3 py-1.5 font-mono text-xs text-bone transition-colors hover:border-gold hover:text-gold"
+            >
+              <Icon name="lucide:plus" class="h-3 w-3" />
+              Add a room here
+              <Icon name="lucide:external-link" class="h-3 w-3 opacity-70" />
+            </a>
+          </li>
+        ))
+      }
+    </ol>
+
+    {/* ------------------------------------------------------------------
+        THE RULE THAT IS NOT OBVIOUS
+        Worth saying on this page in particular: the map makes the story
+        look like a numbered list, and the first instinct of anybody
+        organising a numbered list is to renumber it.
+    ------------------------------------------------------------------- */}
+    <div class="mt-10 rounded-lg border border-edge bg-surface p-6">
+      <h2 class="font-mono text-lg font-semibold">
+        Do not rename or renumber the files
+      </h2>
+      <div class="mt-4 space-y-3 text-sm leading-relaxed text-muted">
+        <p>
+          A room&rsquo;s filename <em>is</em> its name. Every room that leads
+          into it says so by that name, so renaming one file breaks every room
+          pointing at it &mdash; and the build refuses until somebody has
+          fixed them all.
+        </p>
+        <p>
+          That is also why the rooms are not numbered. The story is a tree and
+          not a line, numbering would mean renumbering every time somebody adds
+          a room in the middle, and renumbering means editing files other
+          people are working on &mdash; which is the one thing this whole setup
+          is built to avoid. Add your room anywhere; the map works the shape
+          out on its own.
+        </p>
+      </div>
+
+      <div class="mt-5 flex flex-wrap gap-3">
+        <a
+          href={href('/start')}
+          class="inline-flex items-center gap-2 rounded border border-gold bg-gold px-4 py-2 font-mono text-xs font-medium text-ink transition-colors hover:bg-transparent hover:text-gold"
+        >
+          <Icon name="lucide:book-open" class="h-3.5 w-3.5" />
+          The full walkthrough
+        </a>
+        <a
+          href={STORY_FOLDER}
+          target="_blank"
+          rel="noopener"
+          class="inline-flex items-center gap-2 rounded border border-edge px-4 py-2 font-mono text-xs text-bone transition-colors hover:border-gold hover:text-gold"
+        >
+          Read the rooms on GitHub
+          <Icon name="lucide:external-link" class="h-3 w-3 opacity-70" />
+        </a>
+      </div>
+    </div>
+  </section>
+</BaseLayout>
+
+<style>
+  /*
+    The indent is what shows which room hangs off which. It is a step per
+    level, capped at eight levels deep, and a smaller step on a phone: the
+    story is meant to grow, and a deep storyline at the desktop step would
+    push its own text off the side of a narrow screen.
+  */
+  .story-room {
+    margin-left: calc(var(--depth) * 0.55rem);
+  }
+
+  @media (min-width: 640px) {
+    .story-room {
+      margin-left: calc(var(--depth) * 1.25rem);
+    }
+  }
+</style>

@@ -189,6 +189,19 @@ opens whichever storyline is marked `afterKnight: true` — `the-threshold`
 today, which puts the reader at the open door behind the knight and asks
 whether they go through. The secret words still work and are still unlisted.
 
+**The story map is at `/story-map`.** Generated from `src/content/story/` at
+build time, so it cannot go out of date: it draws the tree, and every room on
+it has an "Add a room here" button that opens a new file with `from:` already
+filled in. It answers "where does my room go", which was the thing actually
+stopping people. Deliberately not in the nav or the footer — it gives away
+every ending, and the people who need it arrive from `/start`.
+
+Settled while building it, so nobody re-opens it: **the rooms are not
+numbered, and the files are never renamed.** A filename is the room's id, the
+story is a tree rather than a line, and renumbering would mean editing files
+other people have open — the exact conflict the parent-names-the-child design
+avoids. The reasoning is written up in CONTRIBUTING.md and on the map page.
+
 - [ ] **Move `afterKnight` as the story grows.** It is one flag on one file,
       and it decides which storyline most visitors see. When members have
       written enough rooms that a different branch is the better front door,

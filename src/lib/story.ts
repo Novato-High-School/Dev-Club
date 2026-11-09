@@ -27,6 +27,8 @@
 
 import { getCollection, type CollectionEntry } from 'astro:content';
 
+import { CLUB } from '../config/site';
+
 /** One scene, with its id, ready for the terminal to use. */
 export interface Scene {
   /** The filename without .md, e.g. 'server-room'. */
@@ -259,4 +261,60 @@ export async function loadStory(): Promise<StoryNode[]> {
       .filter((other) => other.from === scene.id)
       .sort((a, b) => a.id.localeCompare(b.id)),
   }));
+}
+
+// -------------------------------------------------------------------------
+// Starting a new scene
+// -------------------------------------------------------------------------
+
+/**
+ * The template a new scene file starts with.
+ *
+ * GitHub lets us pre-fill a new file through the URL, so the first thing a
+ * contributor sees is a working example with their cursor in it rather than
+ * an empty box and a guess about the format. Every field is explained in
+ * src/content.config.ts, and the automatic check quotes that file by name if
+ * anything is missing.
+ */
+function sceneTemplate(from: string): string {
+  return `---
+# The scene your new one hangs off. This has to match another file's name
+# in src/content/story/, without the .md on the end.
+from: ${from}
+
+# What the reader types to get here. One or two words, and not a word
+# already used in ${from}.md - the story map page shows which are taken.
+choice: knock
+
+# true if your scene ENDS the story and lets the reader into the site.
+# If you set this to false, something else has to follow your scene.
+ending: true
+
+# Your GitHub username, so you get the credit. Username only, never a name.
+author: your-github-username
+---
+
+Write what the reader finds here. Keep the lines short - about 68
+characters - because this gets printed into a terminal.
+`;
+}
+
+/**
+ * A link into GitHub's new-file editor with the template already in it.
+ *
+ * `from` is the scene the new room should hang off. The story map passes the
+ * room you clicked, so the file opens already pointing at the right place —
+ * which is the entire question the map exists to answer. Without an argument
+ * it falls back to a worked example, for the Start here page where there is
+ * no particular room in mind yet.
+ *
+ * This is the plain GitHub website rather than one of the browser editors,
+ * because it is the lightest thing that works and because its save dialog is
+ * the whole branch-and-pull-request flow as a form.
+ */
+export function newSceneUrl(from = 'sub-level'): string {
+  return (
+    `${CLUB.githubOrg}/Dev-Club/new/main/src/content/story` +
+    `?filename=my-scene.md&value=${encodeURIComponent(sceneTemplate(from))}`
+  );
 }

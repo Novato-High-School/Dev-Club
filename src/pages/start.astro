@@ -17,6 +17,7 @@ import HexGrid from '../components/HexGrid.astro';
 import Prompt from '../components/Prompt.astro';
 import PullRequestDiagram from '../components/PullRequestDiagram.astro';
 import { href } from '../lib/href';
+import { newSceneUrl } from '../lib/story';
 import { CLUB } from '../config/site';
 
 /**
@@ -88,6 +89,7 @@ const STEPS = [
     body: [
       'Every room in that story is one Markdown file in src/content/story/, and adding a room means adding one file. You write where it hangs off, what the reader types to get there, and what they find.',
       'You do not touch anybody else’s file, which is deliberate: ten people can each add a scene in the same meeting and none of you will collide.',
+      'Not sure where yours belongs? The story map draws every room in the shape the story actually has, and each one has a button that opens a new file already hanging off it.',
     ],
     warning:
       'Your scene must either lead somewhere or end the story. If it does nothing, the automatic check will say so in plain English and tell you which of the two to add — that is the check doing its job, not you failing.',
@@ -118,50 +120,17 @@ const STEPS = [
   },
 ];
 
-/**
- * The template a new scene file starts with.
- *
- * GitHub lets us pre-fill a new file through the URL, so the first thing a
- * contributor sees is a working example with their cursor in it rather than
- * an empty box and a guess about the format. Every field is explained in
- * src/content.config.ts, and the automatic check quotes that file by name if
- * anything is missing.
- */
-const SCENE_TEMPLATE = `---
-# The scene your new one hangs off. This has to match another file's name
-# in src/content/story/, without the .md on the end.
-from: sub-level
-
-# What the reader types to get here. One or two words.
-choice: knock
-
-# true if your scene ENDS the story and lets the reader into the site.
-# If you set this to false, something else has to follow your scene.
-ending: true
-
-# Your GitHub username, so you get the credit. Username only, never a name.
-author: your-github-username
----
-
-Write what the reader finds here. Keep the lines short - about 68
-characters - because this gets printed into a terminal.
-`;
-
 // The repository everything on this page points at.
 const REPO_URL = `${CLUB.githubOrg}/Dev-Club`;
 
 /**
- * Links straight into GitHub's new-file editor, with the filename box and the
- * file itself already filled in.
- *
- * This is the plain GitHub website rather than one of the browser editors,
- * because it is the lightest thing that works and because its save dialog is
- * the whole branch-and-pull-request flow as a form — which is exactly what
- * step 6 is trying to teach.
+ * The link into GitHub's new-file editor, with the scene template already in
+ * it. Built in src/lib/story.ts so that this page and the story map hand out
+ * exactly the same starting file; the map passes the room you clicked, and
+ * this page takes the worked example, because at this point in the
+ * walkthrough nobody has a particular room in mind yet.
  */
-const NEW_SCENE_URL =
-  `${REPO_URL}/new/main/src/content/story` +
-  `?filename=my-scene.md&value=${encodeURIComponent(SCENE_TEMPLATE)}`;
+const NEW_SCENE_URL = newSceneUrl();
 ---
 
 <BaseLayout
@@ -261,6 +230,13 @@ const NEW_SCENE_URL =
                   <Icon name="lucide:pencil" class="h-3.5 w-3.5" />
                   Write a scene on GitHub
                   <Icon name="lucide:external-link" class="h-3 w-3 opacity-70" />
+                </a>
+                <a
+                  href={href('/story-map')}
+                  class="inline-flex items-center gap-2 rounded border border-edge px-4 py-2 font-mono text-xs text-bone transition-colors hover:border-gold hover:text-gold"
+                >
+                  <Icon name="lucide:map" class="h-3.5 w-3.5" />
+                  See the story map
                 </a>
                 <a
                   href={`${REPO_URL}/tree/main/src/content/story`}
