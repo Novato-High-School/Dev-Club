@@ -170,6 +170,8 @@ export const GENERIC_MISSES: string[] = [
   'Access denied. Also, that was not really an attack.',
   'The knight steps aside. You hit a wall. The wall is fine.',
   'Your attack is added to a list of things that did not work.',
+  'You were facing the wrong direction. The knight is behind you.',
+  'You really think that will work? You do know what you\'re fighting, right?',
 ];
 
 /**
